@@ -260,7 +260,7 @@ process dim_reduct_archr_1_subsample {
     input:
       tuple val(data), val(nDims)
     output:
-      tuple val('ArchR-v1.0.1'), val(data), path("reduced_dim.tsv")
+      tuple val('ArchR (log(tf-idf))'), val(data), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript
