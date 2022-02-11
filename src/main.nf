@@ -7,15 +7,21 @@ include { dim_reduct_snapatac_2;
           dim_reduct_snapatac_2_v2_nystrom_full;
           dim_reduct_snapatac_1;
           dim_reduct_snapatac_1_nystrom;
-          dim_reduct_archr_1_log_tf_idf;
-          dim_reduct_archr_1_logtf_logidf;
-          dim_reduct_archr_1_tf_logidf;
-          dim_reduct_archr_1_subsample;
+          dim_reduct_archr_log_tf_idf;
+          dim_reduct_archr_logtf_logidf;
+          dim_reduct_archr_tf_logidf;
+          dim_reduct_archr_subsample;
+          dim_reduct_cistopic;
         } from './software'
 include { import_dataset } from './dataset'
 include { benchmark_dim_reduct;
-          generate_report;
-          plot_report;
+          benchmark_clustering;
+        } from './benchmark'
+include { gen_dim_reduct_report
+          gen_clust_report;
+          plot_dim_reduct_report;
+          plot_clust_report;
+          plot_umap;
         } from './report'
 
 workflow {
@@ -38,17 +44,19 @@ workflow {
     }
 
     runResult = dim_reduct_snapatac_2(benchData).concat(
-        dim_reduct_archr_1_log_tf_idf(benchData),
-        dim_reduct_archr_1_logtf_logidf(benchData),
-        dim_reduct_archr_1_tf_logidf(benchData),
+        dim_reduct_archr_log_tf_idf(benchData),
+        dim_reduct_archr_logtf_logidf(benchData),
+        dim_reduct_archr_tf_logidf(benchData),
 
         dim_reduct_snapatac_1(benchData),
         dim_reduct_snapatac_2_cosine(benchData),
         dim_reduct_snapatac_2_svd(benchData),
 
+        //dim_reduct_cistopic(benchData),
+
         dim_reduct_snapatac_1_nystrom(nystromBenchData),
         dim_reduct_snapatac_2_nystrom(nystromBenchData),
-        dim_reduct_archr_1_subsample(nystromBenchData),
+        dim_reduct_archr_subsample(nystromBenchData),
     )
 
     benchResult = benchmark_dim_reduct(runResult)
@@ -62,6 +70,16 @@ workflow {
             "resultOutput": result,
             "umap": plot,
         ]}.collect()
+    dim_reduct_report = gen_dim_reduct_report(benchResult)
+    plot_dim_reduct_report(dim_reduct_report)
+    plot_umap(dim_reduct_report)
 
-    plot_report(generate_report(benchResult))
+    clustering = benchmark_clustering(
+        runResult.filter { name, data, result -> name == "SnapATAC2" && data.samplingFraction == null }
+    ).map { method, data, result -> [
+        "datasetType": data.dataType,
+        "datasetName": data.name,
+        "resultOutput": result,
+    ]}.collect()
+    plot_clust_report(gen_clust_report(clustering))
 }

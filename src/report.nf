@@ -1,45 +1,6 @@
 nextflow.enable.dsl=2
 
-process benchmark_dim_reduct {
-    input:
-      tuple val(method), val(data), path(reduced_dim)
-    output:
-      tuple val(method), val(data), path("benchmark.txt"), path("umap.txt.gz")
-
-    """
-    #!/usr/bin/env python3
-    import snapatac2 as snap
-    import scanpy
-    from sklearn.metrics import adjusted_rand_score
-    import numpy as np
-    adata = snap.read("${data.anndata}")
-    try:
-        low_dim = np.loadtxt("${reduced_dim}")
-        score = -1
-        best_dim = -1
-        for n_dim in [5, 15, 30]:
-            adata.obsm["X_spectral"] = low_dim[:, 0:n_dim]
-            snap.pp.knn(adata)
-            for i in np.arange(0.1, 1.8, 0.1):
-                snap.tl.leiden(adata, resolution = i, use_weights=False)
-                sc = adjusted_rand_score(adata.obs["leiden"], adata.obs["cell_annotation"])
-                if sc > score:
-                    score = sc
-                    best_dim = n_dim
-        with open("benchmark.txt", "w") as f: print(score, file=f)
-
-        adata.obsm["X_spectral"] = low_dim[:, 0:best_dim]
-        snap.tl.umap(adata)
-        np.savetxt("umap.txt.gz", adata.obsm["X_umap"])
-        
-    except ValueError:
-        with open("benchmark.txt", "w") as f: print("nan", file=f)
-        with open("umap.txt.gz", "w") as f: print("nan", file=f)
-    """
-}
-
-
-process generate_report {
+process gen_dim_reduct_report {
     publishDir 'result'
 
     input:
@@ -49,7 +10,7 @@ process generate_report {
 
     exec:
     outputFile = task.workDir.resolve("benchmark.tsv")
-    outputFile.text = "dataset\ttype\talgorithm\tsample_fraction\trandom_seed\tARI\n"
+    outputFile.text = "dataset\ttype\talgorithm\tsample_fraction\trandom_seed\tanndata\tUMAP\tARI\n"
     for (x in result.sort { it.datasetName + it.methodName }) {
         outputFile.append([
             x.datasetName,
@@ -57,12 +18,55 @@ process generate_report {
             x.methodName,
             x.samplingFraction,
             x.randomSeed,
+            x.datasetMatrix,
+            x.umap,
             x.resultOutput.text,
         ].join('\t'))
     }
 }
 
-process plot_report {
+process plot_umap {
+    publishDir 'result/umap'
+    input:
+        val report
+    output:
+        file "*.pdf"
+
+    """
+    #!/usr/bin/env python3
+    import seaborn as sns
+    import pandas as pd
+    import anndata as ad
+    import matplotlib.pyplot as plt
+    import numpy as np
+    data = pd.read_csv("${report}", sep="\t")
+    data = data[data["sample_fraction"] == 1]
+    dfs = []
+    for index, row in data.iterrows():
+        annot = ad.read(row['anndata']).obs[['cell_annotation']]
+        umap = np.loadtxt(row['UMAP'])
+        annot["UMAP1"] = umap[:, 0]
+        annot["UMAP2"] = umap[:, 1]
+        annot["dataset"] = row["dataset"]
+        annot["method"] = row["algorithm"]
+        dfs.append(annot)
+    df = pd.concat(dfs, ignore_index=False)
+    for name, group in df.groupby("dataset"):
+        plot = sns.FacetGrid(
+            group,
+            col="method",
+            col_wrap=4,
+            hue="cell_annotation",
+            sharex=False,
+            sharey=False,
+        )
+        plot.map(sns.scatterplot, "UMAP1", "UMAP2", s=2)
+        plot.add_legend(markerscale=3)
+        plt.savefig(name + '.pdf')
+    """
+}
+
+process plot_dim_reduct_report {
     publishDir 'result'
 
     input:
@@ -106,16 +110,53 @@ process plot_report {
     """
 }
 
-process plot_umap {
+process gen_clust_report {
     publishDir 'result'
 
     input:
         val result
     output:
+        file "benchmark_clustering.tsv"
+
+    exec:
+    outputFile = task.workDir.resolve("benchmark_clustering.tsv")
+    outputFile.text = "dataset\ttype\talgorithm\tARI\n"
+    for (item in result) {
+        for (line in item.resultOutput.text.split('\n')) {
+            outputFile.append([
+                item.datasetName,
+                item.datasetType,
+                line + "\n",
+            ].join('\t'))
+        }
+    }
+}
+
+process plot_clust_report {
+    publishDir 'result'
+
+    input:
+        val report
+    output:
         file "*.pdf"
 
     """
     #!/usr/bin/env python3
+    import seaborn as sns
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    data = pd.read_csv("${report}", sep="\t")
+
+    plot = sns.FacetGrid(
+        data,
+        col="dataset",
+        gridspec_kws={"bottom": 0.4}
+    )
+    plot.map(sns.barplot, "algorithm", "ARI")
+
+    plot.set_xticklabels(rotation=45, horizontalalignment='right')
+
+    plt.savefig('report_clust.pdf')
     """
 }
 

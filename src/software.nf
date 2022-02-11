@@ -175,7 +175,7 @@ process dim_reduct_snapatac_1_nystrom {
 // ArchR
 *******************************************************************************/
 
-process dim_reduct_archr_1_tf_logidf {
+process dim_reduct_archr_tf_logidf {
     container 'kaizhang/archr:1.0.1'
 
     input:
@@ -201,7 +201,7 @@ process dim_reduct_archr_1_tf_logidf {
     """
 }
 
-process dim_reduct_archr_1_log_tf_idf {
+process dim_reduct_archr_log_tf_idf {
     container 'kaizhang/archr:1.0.1'
 
     input:
@@ -227,7 +227,7 @@ process dim_reduct_archr_1_log_tf_idf {
     """
 }
 
-process dim_reduct_archr_1_logtf_logidf {
+process dim_reduct_archr_logtf_logidf {
     container 'kaizhang/archr:1.0.1'
 
     input:
@@ -254,7 +254,7 @@ process dim_reduct_archr_1_logtf_logidf {
 }
 
 
-process dim_reduct_archr_1_subsample {
+process dim_reduct_archr_subsample {
     container 'kaizhang/archr:1.0.1'
 
     input:
@@ -297,13 +297,15 @@ process dim_reduct_archr_1_subsample {
 // cisTopic
 *******************************************************************************/
 
-process dim_reduct_cistopic_3 {
+process dim_reduct_cistopic {
+    memory '100 GB'
+    cpus 8
     container 'kaizhang/cistopic:3.0'
 
     input:
       tuple val(data), val(nDims)
     output:
-      tuple val('cisTopic-v3.0'), val(data), path('reduced_dim.tsv')
+      tuple val('cisTopic'), val(data), path('reduced_dim.tsv')
 
     """
     #!/usr/bin/env Rscript
@@ -329,25 +331,11 @@ process dim_reduct_cistopic_3 {
     )
 
     cisTopicObject <- runWarpLDAModels(cisTopicObject, topic=50,
-        seed=2022, nCores=10, addModels=FALSE
+        seed=2022, nCores=8, addModels=FALSE
     )
+    cisTopicObject <- selectModel(cisTopicObject, type='maximum')
+    cellassign <- modelMatSelection(cisTopicObject, 'cell', 'Probability')
 
-      cisTopicObject <- selectModel(cisTopicObject)
-      fm_cisTopic <- modelMatSelection(cisTopicObject, 'cell', 'Probability')
-      return(fm_cisTopic)
-}
-
-
-
-    data <- createcisTopicObject(
-        data,
-        project.name = "cisTopicProject",
-        min.cells = 0,
-        min.regions = 0,
-        is.acc = 0,
-        keepCountsMatrix=F,
-    )
-
-    write.table(result\$matSVD, file="reduced_dim.tsv", row.names=F, col.names=F, sep="\t")
+    write.table(t(cellassign), file="reduced_dim.tsv", row.names=F, col.names=F, sep="\t")
     """
 }
