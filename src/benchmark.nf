@@ -21,7 +21,7 @@ process benchmark_dim_reduct {
             adata.obsm["X_spectral"] = low_dim[:, 0:n_dim]
             snap.pp.knn(adata)
             for i in np.arange(0.1, 1.8, 0.1):
-                snap.tl.leiden(adata, resolution = i, use_weights=False)
+                snap.tl.leiden(adata, resolution = i)
                 sc = adjusted_rand_score(adata.obs["leiden"], adata.obs["cell_annotation"])
                 if sc > score:
                     score = sc

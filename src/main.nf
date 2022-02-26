@@ -4,13 +4,20 @@ include { dim_reduct_snapatac_2;
           dim_reduct_snapatac_2_svd;
           dim_reduct_snapatac_2_cosine;
           dim_reduct_snapatac_2_nystrom;
-          dim_reduct_snapatac_2_v2_nystrom_full;
+
           dim_reduct_snapatac_1;
           dim_reduct_snapatac_1_nystrom;
-          dim_reduct_archr_log_tf_idf;
-          dim_reduct_archr_logtf_logidf;
-          dim_reduct_archr_tf_logidf;
+
+          dim_reduct_archr_1;
+          dim_reduct_archr_2;
+          dim_reduct_archr_3;
           dim_reduct_archr_subsample;
+
+          dim_reduct_signac_1;
+          dim_reduct_signac_2;
+          dim_reduct_signac_3;
+          dim_reduct_signac_4;
+
           dim_reduct_cistopic;
         } from './software'
 include { import_dataset } from './dataset'
@@ -44,19 +51,25 @@ workflow {
     }
 
     runResult = dim_reduct_snapatac_2(benchData).concat(
-        dim_reduct_archr_log_tf_idf(benchData),
-        dim_reduct_archr_logtf_logidf(benchData),
-        dim_reduct_archr_tf_logidf(benchData),
+        dim_reduct_archr_1(benchData),
+        //dim_reduct_archr_2(benchData),
+        //dim_reduct_archr_3(benchData),
+
+        dim_reduct_signac_1(benchData),
+        dim_reduct_signac_2(benchData),
+        dim_reduct_signac_3(benchData),
+        dim_reduct_signac_4(benchData),
 
         dim_reduct_snapatac_1(benchData),
+
         dim_reduct_snapatac_2_cosine(benchData),
         dim_reduct_snapatac_2_svd(benchData),
 
-        //dim_reduct_cistopic(benchData),
+        dim_reduct_cistopic(benchData),
 
         dim_reduct_snapatac_1_nystrom(nystromBenchData),
         dim_reduct_snapatac_2_nystrom(nystromBenchData),
-        dim_reduct_archr_subsample(nystromBenchData),
+        //dim_reduct_archr_subsample(nystromBenchData),
     )
 
     benchResult = benchmark_dim_reduct(runResult)

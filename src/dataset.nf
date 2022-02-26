@@ -14,7 +14,6 @@ process import_dataset {
             "dataType": type,
             "name": item.getBaseName(),
             "anndata": item + "/matrix.h5ad",
-            "matrixMarket": item + "/matrix.mtx.gz"
         ]
     }
 }
