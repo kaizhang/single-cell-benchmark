@@ -5,23 +5,25 @@ nextflow.enable.dsl=2
 *******************************************************************************/
 
 process dim_reduct_snapatac_2 {
-    publishDir 'result/reduced_dim/'
+    cache false
+    //container 'kaizhang/snapatac2:1.99.99.7'
     input:
       tuple val(data), val(nDims)
     output:
-      tuple val("SnapATAC2"), val(data), path("${data.name}_snapatac2_reduced_dim.tsv")
+      tuple val("SnapATAC2"), val(data), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
     import numpy as np
-    adata = snap.read("${data.anndata}")
-    snap.tl.spectral(adata, features=None)
-    np.savetxt("${data.name}_snapatac2_reduced_dim.tsv", adata.obsm["X_spectral"], delimiter="\t")
+    adata = snap.read("${data.anndata}", mode="r")
+    result = snap.tl.spectral(adata, features=None, inplace=False)
+    np.savetxt("reduced_dim.tsv", result[1], delimiter="\t")
     """
 }
 
 process dim_reduct_snapatac_2_cosine {
+    //container 'kaizhang/snapatac2:1.99.99.7'
     input:
       tuple val(data), val(nDims)
     output:
@@ -31,34 +33,33 @@ process dim_reduct_snapatac_2_cosine {
     #!/usr/bin/env python3
     import snapatac2 as snap
     import numpy as np
-    adata = snap.read("${data.anndata}")
-    snap.tl.spectral(adata, features=None, distance_metric="cosine")
-    np.savetxt("reduced_dim.tsv", adata.obsm["X_spectral"], delimiter="\t")
+    adata = snap.read("${data.anndata}", mode="r")
+    result = snap.tl.spectral(adata, features=None, distance_metric="cosine", inplace=False)
+    np.savetxt("reduced_dim.tsv", result[1], delimiter="\t")
     """
 }
 
 
 process dim_reduct_snapatac_2_svd {
-    publishDir 'result/reduced_dim/'
+    //container 'kaizhang/snapatac2:1.99.99.7'
     input:
       tuple val(data), val(nDims)
     output:
-      tuple val("SnapATAC2_SVD"), val(data), path("${data.name}_snapatac2_svd_reduced_dim.tsv")
+      tuple val("SnapATAC2_SVD"), val(data), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
     import numpy as np
-
-    adata = snap.read("${data.anndata}")
-    snap.tl.laplacian(adata, features=None)
-    output = "${data.name}_snapatac2_svd_reduced_dim.tsv"
-    np.savetxt(output, adata.obsm["X_spectral"], delimiter="\t")
+    adata = snap.read("${data.anndata}", mode="r")
+    result = snap.tl.laplacian(adata, features=None, inplace=False)
+    np.savetxt("reduced_dim.tsv", result, delimiter="\t")
     """
 }
 
 process dim_reduct_snapatac_2_nystrom {
-    publishDir 'result/reduced_dim/'
+    cache false
+    //container 'kaizhang/snapatac2:1.99.99.7'
     input:
       tuple val(data), val(nDims)
     output:
@@ -68,14 +69,58 @@ process dim_reduct_snapatac_2_nystrom {
     #!/usr/bin/env python3
     import snapatac2 as snap
     import numpy as np
-
-    adata = snap.read("${data.anndata}")
-
-    snap.tl.spectral(adata, features=None, chunk_size=500, sample_size=${data.samplingFraction}, random_state=${data.randomSeed})
+    adata = snap.read("${data.anndata}", mode="r")
+    result = snap.tl.spectral(adata, features=None, chunk_size=500,
+        sample_size=${data.samplingFraction}, random_state=${data.randomSeed},
+        inplace=False
+    )
     output = "${data.name}_snapatac2_nystrom_${data.samplingFraction}_${data.randomSeed}_reduced_dim.tsv"
-    np.savetxt(output, adata.obsm["X_spectral"], delimiter="\t")
+    np.savetxt(output, result[1], delimiter="\t")
     """
 }
+
+process dim_reduct_snapatac_2_cosine_nystrom {
+    //container 'kaizhang/snapatac2:1.99.99.7'
+    input:
+      tuple val(data), val(nDims)
+    output:
+      tuple val("SnapATAC2_cosine"), val(data), path("reduced_dim.tsv")
+
+    """
+    #!/usr/bin/env python3
+    import snapatac2 as snap
+    import numpy as np
+    adata = snap.read("${data.anndata}", mode="r")
+    result = snap.tl.spectral(
+        adata,
+        distance_metric="cosine",
+        features=None,
+        chunk_size=500,
+        sample_size=${data.samplingFraction},
+        random_state=${data.randomSeed},
+        inplace=False,
+    )
+    np.savetxt("reduced_dim.tsv", result[1], delimiter="\t")
+    """
+}
+
+process dim_reduct_snapatac2_end_to_end {
+    //container 'kaizhang/snapatac2:1.99.99.7'
+    input:
+      tuple val(data), val(nDims)
+    output:
+      tuple val("SnapATAC2"), val(data), path("reduced_dim.tsv")
+
+    """
+    #!/usr/bin/env python3
+    import snapatac2 as snap
+    import numpy as np
+    adata = snap.read("${data.anndata}", mode="r")
+    result = snap.tl.spectral(adata, features=None, inplace=False)
+    np.savetxt("reduced_dim.tsv", result[1], delimiter="\t")
+    """
+}
+
 
 /*******************************************************************************
 // SnapATAC R version
@@ -92,10 +137,13 @@ process dim_reduct_snapatac_1 {
     """
     #!/usr/bin/env Rscript
     library("Matrix")
-    library("anndata")
+    library("rhdf5")
     set.seed(2022)
-    adata <- read_h5ad("${data.anndata}")
-    data <- as(adata\$X, "CsparseMatrix")
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- sparseMatrix(j = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=H5Aread(H5Aopen(x, "shape"))
+    )
     x.sp <- SnapATAC::newSnap()
     x.sp@bmat <- data
     x.sp <- SnapATAC::makeBinary(x.sp, mat="bmat")
@@ -122,10 +170,14 @@ process dim_reduct_snapatac_1_nystrom {
     """
     #!/usr/bin/env Rscript
     library("Matrix")
-    library("anndata")
+    library("rhdf5")
     set.seed($data.randomSeed)
-    adata <- read_h5ad("${data.anndata}")
-    data <- as(adata\$X, "CsparseMatrix")
+
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- sparseMatrix(j = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=H5Aread(H5Aopen(x, "shape"))
+    )
     sample_size <- trunc(nrow(data) * $data.samplingFraction)
     n_dim <- min(sample_size - 2, $nDims)
     reference <- data[sample(nrow(data),size=sample_size, replace=F),]
@@ -170,10 +222,15 @@ process dim_reduct_archr_1 {
     """
     #!/usr/bin/env Rscript
     library("ArchR")
-    library("anndata")
+    library("Matrix")
+    library("rhdf5")
     set.seed(2022)
-    adata <- read_h5ad("${data.anndata}")\$T
-    data <- as(adata\$X, "CsparseMatrix")
+
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
     result <- ArchR:::.computeLSI(mat = data,
         LSIMethod = 1,
         scaleTo = 10^4,
@@ -198,10 +255,14 @@ process dim_reduct_archr_2 {
     """
     #!/usr/bin/env Rscript
     library("ArchR")
-    library("anndata")
+    library("Matrix")
+    library("rhdf5")
     set.seed(2022)
-    adata <- read_h5ad("${data.anndata}")\$T
-    data <- as(adata\$X, "CsparseMatrix")
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
     result <- ArchR:::.computeLSI(mat = data,
         LSIMethod = 2,
         scaleTo = 10^4,
@@ -226,10 +287,14 @@ process dim_reduct_archr_3 {
     """
     #!/usr/bin/env Rscript
     library("ArchR")
-    library("anndata")
+    library("Matrix")
+    library("rhdf5")
     set.seed(2022)
-    adata <- read_h5ad("${data.anndata}")\$T
-    data <- as(adata\$X, "CsparseMatrix")
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
     result <- ArchR:::.computeLSI(mat = data,
         LSIMethod = 3,
         scaleTo = 10^4,
@@ -255,14 +320,17 @@ process dim_reduct_archr_subsample {
     """
     #!/usr/bin/env Rscript
     library("ArchR")
-    library("anndata")
+    library("Matrix")
+    library("rhdf5")
     set.seed($data.randomSeed)
-    adata <- read_h5ad("${data.anndata}")\$T
-    data <- as(adata\$X, "CsparseMatrix")
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
     sample_size <- trunc(ncol(data) * $data.samplingFraction)
     n_dim <- min(sample_size - 2, $nDims)
     reference_data <- data[, sample(ncol(data),size=sample_size, replace=F)]
-
     ref <- ArchR:::.computeLSI(mat = reference_data,
         LSIMethod = 2,
         scaleTo = 10^4,
@@ -337,7 +405,7 @@ process dim_reduct_cistopic {
 *******************************************************************************/
 
 process dim_reduct_signac_1 {
-    container 'kaizhang/signac:1.5'
+    container 'kaizhang/signac:1.6'
 
     input:
       tuple val(data), val(nDims)
@@ -346,10 +414,13 @@ process dim_reduct_signac_1 {
 
     """
     #!/usr/bin/env Rscript
-    library("anndata")
+    library("rhdf5")
     set.seed(2022)
-    adata <- read_h5ad("${data.anndata}")\$T
-    data <- as(adata\$X, "CsparseMatrix")
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- Matrix::sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
     result <- Signac:::RunTFIDF.default(data,method = 1)
     result <- Signac:::RunSVD.default(result, n = 50)
 
@@ -359,7 +430,7 @@ process dim_reduct_signac_1 {
 }
 
 process dim_reduct_signac_2 {
-    container 'kaizhang/signac:1.5'
+    container 'kaizhang/signac:1.6'
 
     input:
       tuple val(data), val(nDims)
@@ -368,10 +439,13 @@ process dim_reduct_signac_2 {
 
     """
     #!/usr/bin/env Rscript
-    library("anndata")
+    library("rhdf5")
     set.seed(2022)
-    adata <- read_h5ad("${data.anndata}")\$T
-    data <- as(adata\$X, "CsparseMatrix")
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- Matrix::sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
     result <- Signac:::RunTFIDF.default(data,method = 2)
     result <- Signac:::RunSVD.default(result, n = 50)
 
@@ -381,7 +455,7 @@ process dim_reduct_signac_2 {
 }
 
 process dim_reduct_signac_3 {
-    container 'kaizhang/signac:1.5'
+    container 'kaizhang/signac:1.6'
 
     input:
       tuple val(data), val(nDims)
@@ -390,10 +464,13 @@ process dim_reduct_signac_3 {
 
     """
     #!/usr/bin/env Rscript
-    library("anndata")
+    library("rhdf5")
     set.seed(2022)
-    adata <- read_h5ad("${data.anndata}")\$T
-    data <- as(adata\$X, "CsparseMatrix")
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- Matrix::sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
     result <- Signac:::RunTFIDF.default(data,method = 3)
     result <- Signac:::RunSVD.default(result, n = 50)
 
@@ -403,7 +480,7 @@ process dim_reduct_signac_3 {
 }
 
 process dim_reduct_signac_4 {
-    container 'kaizhang/signac:1.5'
+    container 'kaizhang/signac:1.6'
 
     input:
       tuple val(data), val(nDims)
@@ -412,14 +489,48 @@ process dim_reduct_signac_4 {
 
     """
     #!/usr/bin/env Rscript
-    library("anndata")
+    library("rhdf5")
     set.seed(2022)
-    adata <- read_h5ad("${data.anndata}")\$T
-    data <- as(adata\$X, "CsparseMatrix")
+    file = H5Fopen("${data.anndata}", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- Matrix::sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
     result <- Signac:::RunTFIDF.default(data,method = 4)
     result <- Signac:::RunSVD.default(result, n = 50)
-
     output <- "reduced_dim.tsv"
     write.table(result@cell.embeddings, file=output, row.names=F, col.names=F, sep="\t")
     """
 }
+
+/*******************************************************************************
+// SCALE
+*******************************************************************************/
+
+process dim_reduct_scale {
+    container 'kaizhang/scale:1.1.0'
+
+    input:
+      tuple val(data), val(nDims)
+    output:
+      tuple val('SCALE'), val(data), path("reduced_dim.tsv")
+
+    """
+    #!/usr/bin/env python3
+    import anndata as ad
+    import numpy as np
+    import subprocess
+    if "${data.name}" == "10x_PBMC_5k":
+      k = 3
+    else:
+      data = ad.read("${data.anndata}")
+      k = np.unique(data.obs["cell_annotation"]).size
+    subprocess.run([
+      "SCALE.py", "-d", "${data.anndata}", "-k", str(k), "--min_peaks", "0",
+      "--min_cells", "0", 
+    ])
+    data = ad.read("output/adata.h5ad")
+    np.savetxt("reduced_dim.tsv", data.obsm['latent'], delimiter="\t")
+    """
+}
+

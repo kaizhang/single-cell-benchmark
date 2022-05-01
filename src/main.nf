@@ -4,6 +4,7 @@ include { dim_reduct_snapatac_2;
           dim_reduct_snapatac_2_svd;
           dim_reduct_snapatac_2_cosine;
           dim_reduct_snapatac_2_nystrom;
+          dim_reduct_snapatac_2_cosine_nystrom;
 
           dim_reduct_snapatac_1;
           dim_reduct_snapatac_1_nystrom;
@@ -17,6 +18,8 @@ include { dim_reduct_snapatac_2;
           dim_reduct_signac_2;
           dim_reduct_signac_3;
           dim_reduct_signac_4;
+
+          dim_reduct_scale;
 
           dim_reduct_cistopic;
         } from './software'
@@ -41,7 +44,7 @@ workflow {
 
     nystromBenchData = datasets.flatMap { data -> [
             [0.1, 0.2, 0.5],
-            [1, 2, 3, 4, 5],
+            [1, 2, 3],
         ].combinations().collect { x -> 
             d = data.clone()
             d["samplingFraction"] = x[0]
@@ -52,8 +55,8 @@ workflow {
 
     runResult = dim_reduct_snapatac_2(benchData).concat(
         dim_reduct_archr_1(benchData),
-        //dim_reduct_archr_2(benchData),
-        //dim_reduct_archr_3(benchData),
+        dim_reduct_archr_2(benchData),
+        dim_reduct_archr_3(benchData),
 
         dim_reduct_signac_1(benchData),
         dim_reduct_signac_2(benchData),
@@ -65,11 +68,13 @@ workflow {
         dim_reduct_snapatac_2_cosine(benchData),
         dim_reduct_snapatac_2_svd(benchData),
 
-        dim_reduct_cistopic(benchData),
+        //dim_reduct_scale(benchData),
+        //dim_reduct_cistopic(benchData),
 
         dim_reduct_snapatac_1_nystrom(nystromBenchData),
         dim_reduct_snapatac_2_nystrom(nystromBenchData),
-        //dim_reduct_archr_subsample(nystromBenchData),
+        dim_reduct_snapatac_2_cosine_nystrom(nystromBenchData),
+        dim_reduct_archr_subsample(nystromBenchData),
     )
 
     benchResult = benchmark_dim_reduct(runResult)
@@ -87,12 +92,12 @@ workflow {
     plot_dim_reduct_report(dim_reduct_report)
     plot_umap(dim_reduct_report)
 
-    clustering = benchmark_clustering(
-        runResult.filter { name, data, result -> name == "SnapATAC2" && data.samplingFraction == null }
-    ).map { method, data, result -> [
-        "datasetType": data.dataType,
-        "datasetName": data.name,
-        "resultOutput": result,
-    ]}.collect()
-    plot_clust_report(gen_clust_report(clustering))
+//    clustering = benchmark_clustering(
+//        runResult.filter { name, data, result -> name == "SnapATAC2" && data.samplingFraction == null }
+//    ).map { method, data, result -> [
+//        "datasetType": data.dataType,
+//        "datasetName": data.name,
+//        "resultOutput": result,
+//    ]}.collect()
+//    plot_clust_report(gen_clust_report(clustering))
 }
