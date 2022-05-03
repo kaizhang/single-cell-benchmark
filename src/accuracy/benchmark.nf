@@ -20,7 +20,7 @@ process benchmark_dim_reduct {
         for n_dim in [5, 15, 30]:
             knn = snap.pp.knn(low_dim, use_dims = n_dim, inplace = False)
             for i in np.arange(0.1, 1.8, 0.1):
-                clusters = snap.tl.leiden(adata, adjacency = knn, resolution = i, inplace = False)
+                clusters = snap.tl.leiden(knn, resolution = i, inplace = False)
                 sc = adjusted_rand_score(clusters, adata.obs["cell_annotation"])
                 if sc > score:
                     score = sc
@@ -35,6 +35,31 @@ process benchmark_dim_reduct {
     except ValueError:
         with open("benchmark.txt", "w") as f: print("nan", file=f)
         with open("umap.txt.gz", "w") as f: print("nan", file=f)
+    """
+}
+
+process benchmark_end_to_end {
+    //container 'kaizhang/snapatac2:1.99.99.7'
+    input:
+      tuple val(method), val(data), path(clusters)
+    output:
+      tuple val(method), val(data), path("benchmark.txt")
+
+    """
+    #!/usr/bin/env python3
+    from sklearn.metrics import adjusted_rand_score
+    import numpy as np
+    import pandas as pd
+    meta = pd.read_csv("${data.metadata}", index_col = 0, sep = '\t')
+
+    result = pd.read_csv("${clusters}", index_col = 0, sep = '\t', na_filter = False)
+    expected = meta.loc[result.index]["subclass"]
+
+    score = -1
+    for (_, clusters) in result.iteritems():
+        sc = adjusted_rand_score(clusters, expected)
+        if sc > score: score = sc
+    with open("benchmark.txt", "w") as f: print(score, file=f)
     """
 }
 

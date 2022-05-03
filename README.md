@@ -2,7 +2,23 @@
 
 NOTE: the benchmark dataset is not uploaded here.
 
-Run the benchmarking pipeline using `nextflow run src/main.nf -resume`.
+## Dimenstion reduction
+
+```
+nextflow run src/accuracy/main.nf -resume
+```
+
+## Running time and memory usage
+
+```
+nextflow run src/resource_usage/main.nf -with-trace -qs 1 -resume
+```
+
+Visualize the resource usage:
+
+```
+nextflow log <run name> -f hash,name,status,realtime,peak_rss
+```
 
 ## How to prepare benchmark dataset
 

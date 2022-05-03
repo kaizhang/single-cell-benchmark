@@ -22,12 +22,22 @@ include { dim_reduct_snapatac_2;
           dim_reduct_scale;
 
           dim_reduct_cistopic;
+
+          end_to_end_snapatac_2;
+          end_to_end_batch_correct_snapatac_2;
+          end_to_end_archr;
         } from './software'
-include { import_dataset } from './dataset'
+
+include { import_dataset;
+          import_raw_dataset;
+        } from './dataset'
+
 include { benchmark_dim_reduct;
+          benchmark_end_to_end;
           benchmark_clustering;
         } from './benchmark'
-include { gen_dim_reduct_report
+
+include { gen_dim_reduct_report;
           gen_clust_report;
           plot_dim_reduct_report;
           plot_clust_report;
@@ -39,7 +49,7 @@ workflow {
         tuple("Real", "dataset/Real"),
         tuple("Synthetic", "dataset/Synthetic"),
     ])).flatten()
-    
+
     benchData = datasets.map { tuple(it, 50) }
 
     nystromBenchData = datasets.flatMap { data -> [
@@ -87,8 +97,31 @@ workflow {
             "randomSeed": data.randomSeed,
             "resultOutput": result,
             "umap": plot,
-        ]}.collect()
-    dim_reduct_report = gen_dim_reduct_report(benchResult)
+        ]}
+
+
+
+    rawDatasets = import_raw_dataset(Channel.fromList([
+        tuple("End-to-end", "dataset/Raw"),
+    ])).flatten()
+    rawBenchData = rawDatasets.map { tuple(it, 50) }
+
+    rawRunResult = end_to_end_snapatac_2(rawBenchData).concat(
+        end_to_end_batch_correct_snapatac_2(rawBenchData),
+        end_to_end_archr(rawBenchData),
+    )
+    rawBenchResult = benchmark_end_to_end(rawRunResult)
+        .map { method, data, result -> [
+            "datasetType": data.dataType,
+            "datasetName": data.name,
+            "datasetMatrix": data.anndata,
+            "methodName": method,
+            "samplingFraction": data.get("samplingFraction", 1),
+            "randomSeed": data.randomSeed,
+            "resultOutput": result,
+        ]}
+
+    dim_reduct_report = gen_dim_reduct_report(benchResult.concat(rawBenchResult).collect())
     plot_dim_reduct_report(dim_reduct_report)
     plot_umap(dim_reduct_report)
 

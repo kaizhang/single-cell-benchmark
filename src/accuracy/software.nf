@@ -5,7 +5,6 @@ nextflow.enable.dsl=2
 *******************************************************************************/
 
 process dim_reduct_snapatac_2 {
-    cache false
     //container 'kaizhang/snapatac2:1.99.99.7'
     input:
       tuple val(data), val(nDims)
@@ -58,7 +57,6 @@ process dim_reduct_snapatac_2_svd {
 }
 
 process dim_reduct_snapatac_2_nystrom {
-    cache false
     //container 'kaizhang/snapatac2:1.99.99.7'
     input:
       tuple val(data), val(nDims)
@@ -104,22 +102,84 @@ process dim_reduct_snapatac_2_cosine_nystrom {
     """
 }
 
-process dim_reduct_snapatac2_end_to_end {
+process end_to_end_snapatac_2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
     input:
       tuple val(data), val(nDims)
     output:
-      tuple val("SnapATAC2"), val(data), path("reduced_dim.tsv")
+      tuple val("SnapATAC2"), val(data), path("clusters.tsv")
 
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
+    from tempfile import TemporaryDirectory
     import numpy as np
-    adata = snap.read("${data.anndata}", mode="r")
-    result = snap.tl.spectral(adata, features=None, inplace=False)
-    np.savetxt("reduced_dim.tsv", result[1], delimiter="\t")
+    import pandas as pd
+    with TemporaryDirectory(dir="./") as tmp_dir:
+        data = snap.pp.import_data(
+            fragment_file = "${data.fragments_name_sorted}",
+            gff_file = "${data.gene_annotations}",
+            chrom_size = snap.genome.mm10,
+            file = tmp_dir + "/tmp.h5ad",
+            min_tsse = 0,
+            min_num_fragments = 0,
+        )
+        snap.pp.make_tile_matrix(data)
+        snap.pp.select_features(data)
+        snap.tl.spectral(data)
+        snap.pp.knn(data, use_dims = 15)
+
+        clusters = []
+        for i in np.arange(0.1, 1.501, 0.1):
+            snap.tl.leiden(data, resolution=i)
+            clusters.append(data.obs['leiden'])
+
+        df = pd.DataFrame(np.array(clusters).T, index = data.obs_names)
+        data.close()
+    df.to_csv("clusters.tsv", header=False, sep="\t")
     """
 }
+
+process end_to_end_batch_correct_snapatac_2 {
+    //container 'kaizhang/snapatac2:1.99.99.7'
+    input:
+      tuple val(data), val(nDims)
+    output:
+      tuple val("SnapATAC2 (batch correct)"), val(data), path("clusters.tsv")
+
+    """
+    #!/usr/bin/env python3
+    import snapatac2 as snap
+    from tempfile import TemporaryDirectory
+    import numpy as np
+    import pandas as pd
+    with TemporaryDirectory(dir="./") as tmp_dir:
+        data = snap.pp.import_data(
+            fragment_file = "${data.fragments_name_sorted}",
+            gff_file = "${data.gene_annotations}",
+            chrom_size = snap.genome.mm10,
+            file = tmp_dir + "/tmp.h5ad",
+            min_tsse = 0,
+            min_num_fragments = 0,
+        )
+        snap.pp.make_tile_matrix(data)
+        snap.pp.select_features(data)
+        snap.tl.spectral(data)
+        snap.pp.mnc_correct(data, "batch", use_dims = 15)
+        snap.pp.knn(data, use_rep="X_spectral_mnn", use_dims = 15)
+
+        clusters = []
+        for i in np.arange(0.1, 1.501, 0.1):
+            snap.tl.leiden(data, resolution=i)
+            clusters.append(data.obs['leiden'])
+
+        df = pd.DataFrame(np.array(clusters).T, index = data.obs_names)
+        data.close()
+    df.to_csv("clusters.tsv", header=False, sep="\t")
+    """
+}
+
+
 
 
 /*******************************************************************************
@@ -352,6 +412,63 @@ process dim_reduct_archr_subsample {
     """
 }
 
+process end_to_end_archr {
+    container 'kaizhang/archr:1.0.1'
+
+    input:
+      tuple val(data), val(nDims)
+    output:
+      tuple val('ArchR'), val(data), path("clusters.tsv")
+
+    """
+    #!/usr/bin/env Rscript
+    library("ArchR")
+    library("parallel")
+    set.seed(1)
+    addArchRGenome("mm10")
+
+    ArrowFiles <- createArrowFiles(
+        inputFiles = c("${data.fragments_sorted}"),
+        sampleNames = c("sample"),
+        minTSS = 0,
+        minFrags = 0, 
+        maxFrags = 1e+10,
+        excludeChr = c("chrM"),
+        addTileMat = T,
+        addGeneScoreMat = F,
+    )
+    proj <- ArchRProject(
+        ArrowFiles = ArrowFiles, 
+        outputDirectory = "./",
+        copyArrows = F,
+    )
+    proj <- addIterativeLSI(
+        ArchRProj = proj,
+        useMatrix = "TileMatrix",
+        dimsToUse = 1:15,
+        name = "IterativeLSI",
+    )
+
+    clusters <- c()
+    for (i in seq(from = 0.1, to = 1.5, by = 0.1)) {
+        proj <- addClusters(
+            input = proj,
+            reducedDims = "IterativeLSI",
+            maxClusters = 100,
+            filterBias = F,
+            force=T,
+            resolution = i,
+        )
+        clusters <- cbind(clusters, proj\$Clusters)
+    }
+    rownames(clusters) <- sapply(proj\$cellNames, function(x) strsplit(x, '#')[[1]][2])
+    write.table(
+        clusters, file = "clusters.tsv", quote = F, sep = "\t", row.names = T,
+        col.names = F, 
+    )
+    """
+}
+
 
 /*******************************************************************************
 // cisTopic
@@ -502,6 +619,54 @@ process dim_reduct_signac_4 {
     write.table(result@cell.embeddings, file=output, row.names=F, col.names=F, sep="\t")
     """
 }
+
+process end_to_end_signac {
+    container 'kaizhang/signac:1.6'
+
+    input:
+      tuple val(data), val(nDims)
+    output:
+      tuple val('Signac'), val(data), path("clusters.tsv")
+
+    """
+    #!/usr/bin/env Rscript
+    library(Signac)
+    library(Seurat)
+    library(GenomeInfoDb)
+    library(EnsDb.Hsapiens.v75)
+    library(ggplot2)
+    library(patchwork)
+    set.seed(1234)
+
+    frags <- CreateFragmentObject(path = "${data.fragments_name_sorted}")
+
+    GenomeBinMatrix(
+        fragments = fragments,
+        genome = genome,
+        binsize = 1000
+    )
+
+    clusters <- c()
+    for (i in seq(from = 0.1, to = 1.5, by = 0.1)) {
+        proj <- addClusters(
+            input = proj,
+            reducedDims = "IterativeLSI",
+            maxClusters = 100,
+            filterBias = F,
+            force=T,
+            resolution = i,
+        )
+        clusters <- cbind(clusters, proj\$Clusters)
+    }
+    rownames(clusters) <- sapply(proj\$cellNames, function(x) strsplit(x, '#')[[1]][2])
+    write.table(
+        clusters, file = "clusters.tsv", quote = F, sep = "\t", row.names = T,
+        col.names = F, 
+    )
+    """
+}
+
+
 
 /*******************************************************************************
 // SCALE

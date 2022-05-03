@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 process import_dataset {
     cache false
     input:
-      tuple val(type), val(dir)
+      val(dir)
     output:
       val list
 
@@ -11,9 +11,10 @@ process import_dataset {
     list = []
     file(dir).eachDir { item -> 
         list << [
-            "dataType": type,
             "name": item.getBaseName(),
-            "anndata": item + "/matrix.h5ad",
+            "fragments_name_sorted": item + "/fragments_nsrt.bed.gz",
+            "fragments_sorted": item + "/fragments_srt.tsv.gz",
+            "gene_annotations": item + "/gene_anno.gff3.gz",
         ]
     }
 }

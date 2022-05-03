@@ -4,3 +4,5 @@ RUN Rscript -e "install.packages( \
     'Rsamtools', 'S4Vectors', 'BiocGenerics'), \
     repos = BiocManager::repositories())"
 RUN Rscript -e "devtools::install_github('GreenleafLab/ArchR', ref='v1.0.1', repos = BiocManager::repositories())"
+RUN Rscript -e "BiocManager::install('BSgenome.Mmusculus.UCSC.mm10')"
+RUN Rscript -e "BiocManager::install('BSgenome.Hsapiens.UCSC.hg38')"
