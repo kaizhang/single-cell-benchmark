@@ -39,23 +39,6 @@ process dim_reduct_snapatac_2_cosine {
 }
 
 
-process dim_reduct_snapatac_2_svd {
-    //container 'kaizhang/snapatac2:1.99.99.7'
-    input:
-      tuple val(data), val(nDims)
-    output:
-      tuple val("SnapATAC2_SVD"), val(data), path("reduced_dim.tsv")
-
-    """
-    #!/usr/bin/env python3
-    import snapatac2 as snap
-    import numpy as np
-    adata = snap.read("${data.anndata}", mode="r")
-    result = snap.tl.laplacian(adata, features=None, inplace=False)
-    np.savetxt("reduced_dim.tsv", result, delimiter="\t")
-    """
-}
-
 process dim_reduct_snapatac_2_nystrom {
     //container 'kaizhang/snapatac2:1.99.99.7'
     input:

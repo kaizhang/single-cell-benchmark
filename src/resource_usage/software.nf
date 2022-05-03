@@ -73,7 +73,7 @@ process preproc_snapatac_1 {
     input:
       val(data)
     output:
-      path("data.rds")
+      tuple val("$data.name"), path("data.rds")
 
     """
     #!/usr/bin/env Rscript
@@ -122,11 +122,11 @@ process preproc_snapatac_1 {
 
 process dim_reduct_snapatac_1 {
     container 'kaizhang/snapatac:1.0'
-
+    tag "$name"
     input:
-      val(data)
+      tuple val(name), path(data)
     output:
-      path("data.rds")
+      tuple val(name), path("data.rds")
 
     """
     #!/usr/bin/env Rscript
@@ -148,11 +148,11 @@ process dim_reduct_snapatac_1 {
 
 process clust_snapatac_1 {
     container 'kaizhang/snapatac:1.0'
-
+    tag "$name"
     input:
-      val(data)
+      tuple val(name), path(data)
     output:
-      path("data.rds")
+      tuple val(name), path("data.rds")
 
     """
     #!/usr/bin/env Rscript
@@ -209,6 +209,7 @@ process  preproc_archr {
         outputDirectory = "archr",
         copyArrows = T,
     )
+    saveArchRProject(ArchRProj = proj, outputDirectory = "archr", load = F)
     """
 }
 
@@ -219,7 +220,7 @@ process  dim_reduct_archr {
     input:
       tuple val(name), path(archr)
     output:
-      tuple val(name), path(archr)
+      tuple val(name), path("archr")
 
     """
     #!/usr/bin/env Rscript
@@ -232,6 +233,7 @@ process  dim_reduct_archr {
         useMatrix = "TileMatrix",
         name = "IterativeLSI",
     )
+    saveArchRProject(ArchRProj = proj, outputDirectory = "archr", load = F)
     """
 }
 
@@ -242,7 +244,7 @@ process clust_archr {
     input:
       tuple val(name), path(archr)
     output:
-      tuple val(name), path(archr)
+      tuple val(name), path("archr")
 
     """
     #!/usr/bin/env Rscript
@@ -251,5 +253,6 @@ process clust_archr {
     set.seed(1)
     proj <- loadArchRProject(path = "$archr", force = FALSE, showLogo = F)
     proj <- addClusters(input = proj, reducedDims = "IterativeLSI")
+    saveArchRProject(ArchRProj = proj, outputDirectory = "archr", load = F)
     """
 }

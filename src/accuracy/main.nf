@@ -1,7 +1,6 @@
 nextflow.enable.dsl=2
 
 include { dim_reduct_snapatac_2;
-          dim_reduct_snapatac_2_svd;
           dim_reduct_snapatac_2_cosine;
           dim_reduct_snapatac_2_nystrom;
           dim_reduct_snapatac_2_cosine_nystrom;
@@ -76,7 +75,6 @@ workflow {
         dim_reduct_snapatac_1(benchData),
 
         dim_reduct_snapatac_2_cosine(benchData),
-        dim_reduct_snapatac_2_svd(benchData),
 
         //dim_reduct_scale(benchData),
         //dim_reduct_cistopic(benchData),
