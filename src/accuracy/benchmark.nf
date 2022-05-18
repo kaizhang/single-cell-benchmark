@@ -40,26 +40,77 @@ process benchmark_dim_reduct {
 
 process benchmark_end_to_end {
     //container 'kaizhang/snapatac2:1.99.99.7'
+    publishDir 'result'
     input:
-      tuple val(method), val(data), path(clusters)
+      tuple val(method), val(data), val(dim_reduct), val(clusters)
+
     output:
-      tuple val(method), val(data), path("benchmark.txt")
+      tuple val(method), val(data), path("${data.name}-${method}.pdf")
 
     """
     #!/usr/bin/env python3
     from sklearn.metrics import adjusted_rand_score
     import numpy as np
     import pandas as pd
+    import snapatac2 as snap
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import colorcet
     meta = pd.read_csv("${data.metadata}", index_col = 0, sep = '\t')
+    data = zip(
+        ${dim_reduct.collect { '"' + it + '"' }},
+        ${clusters.collect { '"' + it + '"' }},
+    )
 
-    result = pd.read_csv("${clusters}", index_col = 0, sep = '\t', na_filter = False)
-    expected = meta.loc[result.index]["subclass"]
+    reduced_dim = None
+    cell_cluster = None
+    cell_labels = None
+    max_score = -1
+    for dim_file, cluster in data:
+        result = pd.read_csv(cluster, header=None, index_col = 0, sep = '\t', na_filter = False)
+        expected = meta.loc[result.index]["subclass"]
 
-    score = -1
-    for (_, clusters) in result.iteritems():
-        sc = adjusted_rand_score(clusters, expected)
-        if sc > score: score = sc
-    with open("benchmark.txt", "w") as f: print(score, file=f)
+        score = -1
+        for (_, clusters) in result.iteritems():
+            sc = adjusted_rand_score(clusters, expected)
+            if sc > score: score = sc
+
+        if score > max_score:
+            max_score = score
+            reduced_dims = pd.read_csv(
+                dim_file, header=None, index_col = 0, sep = '\t', na_filter = False
+            )
+            idx = [result.index.get_loc(i) for i in reduced_dims.index]
+            cell_cluster = clusters[idx]
+            cell_labels = expected[idx]
+
+    umap = snap.tl.umap(reduced_dims.to_numpy(), inplace=False)
+    n = umap.shape[0]
+    fig, (ax1, ax2) = plt.subplots(ncols=2, sharey=True, figsize=(15,6))
+    df = pd.DataFrame({
+        "UMAP1": umap[:, 0],
+        "UMAP2": umap[:, 1],
+        "cluster": cell_cluster,
+        "cell type": cell_labels,
+    })
+    size = 0.8 if n > 20000 else 2
+    sns.scatterplot(
+        x="UMAP1", y="UMAP2", data=df,
+        hue = 'cluster', edgecolor="none", s=size, alpha=0.5,
+        palette = colorcet.glasbey[:np.unique(cell_cluster).size],
+        ax = ax1,
+    )
+    sns.scatterplot(
+        x="UMAP1", y="UMAP2", data=df,
+        hue = 'cell type', edgecolor="none", s=size, alpha=0.5,
+        palette = colorcet.glasbey[:np.unique(cell_labels).size],
+        ax = ax2,
+    )
+    ax1.legend(loc='upper left', bbox_to_anchor=(1, 1), ncol=2)
+    ax2.legend(loc='upper left', bbox_to_anchor=(1, 1), ncol=1)
+    plt.subplots_adjust(left = 0.05, right = 0.88, wspace = 0.4)
+    plt.title("ARI: " + str(max_score))
+    plt.savefig("${data.name}-${method}.pdf")
     """
 }
 

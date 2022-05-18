@@ -23,7 +23,7 @@ include { dim_reduct_snapatac_2;
           dim_reduct_cistopic;
 
           end_to_end_snapatac_2;
-          end_to_end_batch_correct_snapatac_2;
+          end_to_end_snapatac_2_cosine;
           end_to_end_archr;
         } from './software'
 
@@ -97,31 +97,22 @@ workflow {
             "umap": plot,
         ]}
 
-
-
     rawDatasets = import_raw_dataset(Channel.fromList([
         tuple("End-to-end", "dataset/Raw"),
     ])).flatten()
     rawBenchData = rawDatasets.map { tuple(it, 50) }
 
     rawRunResult = end_to_end_snapatac_2(rawBenchData).concat(
-        end_to_end_batch_correct_snapatac_2(rawBenchData),
+        end_to_end_snapatac_2_cosine(rawBenchData),
         end_to_end_archr(rawBenchData),
     )
-    rawBenchResult = benchmark_end_to_end(rawRunResult)
-        .map { method, data, result -> [
-            "datasetType": data.dataType,
-            "datasetName": data.name,
-            "datasetMatrix": data.anndata,
-            "methodName": method,
-            "samplingFraction": data.get("samplingFraction", 1),
-            "randomSeed": data.randomSeed,
-            "resultOutput": result,
-        ]}
+    benchmark_end_to_end(rawRunResult)
 
+    /*
     dim_reduct_report = gen_dim_reduct_report(benchResult.concat(rawBenchResult).collect())
     plot_dim_reduct_report(dim_reduct_report)
     plot_umap(dim_reduct_report)
+        */
 
 //    clustering = benchmark_clustering(
 //        runResult.filter { name, data, result -> name == "SnapATAC2" && data.samplingFraction == null }

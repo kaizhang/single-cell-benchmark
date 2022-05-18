@@ -90,7 +90,7 @@ process end_to_end_snapatac_2 {
     input:
       tuple val(data), val(nDims)
     output:
-      tuple val("SnapATAC2"), val(data), path("clusters.tsv")
+      tuple val("SnapATAC2"), val(data), path("*.dim"), path("*.cluster")
 
     """
     #!/usr/bin/env python3
@@ -98,11 +98,17 @@ process end_to_end_snapatac_2 {
     from tempfile import TemporaryDirectory
     import numpy as np
     import pandas as pd
+    if "${data.name}".startswith("human"):
+        genome = snap.genome.hg38
+    elif "${data.name}".startswith("mouse"):
+        genome = snap.genome.mm10
+    else:
+        genome = None
     with TemporaryDirectory(dir="./") as tmp_dir:
         data = snap.pp.import_data(
             fragment_file = "${data.fragments_name_sorted}",
             gff_file = "${data.gene_annotations}",
-            chrom_size = snap.genome.mm10,
+            chrom_size = genome,
             file = tmp_dir + "/tmp.h5ad",
             min_tsse = 0,
             min_num_fragments = 0,
@@ -110,25 +116,28 @@ process end_to_end_snapatac_2 {
         snap.pp.make_tile_matrix(data)
         snap.pp.select_features(data)
         snap.tl.spectral(data)
-        snap.pp.knn(data, use_dims = 15)
 
-        clusters = []
-        for i in np.arange(0.1, 1.501, 0.1):
-            snap.tl.leiden(data, resolution=i)
-            clusters.append(data.obs['leiden'])
-
-        df = pd.DataFrame(np.array(clusters).T, index = data.obs_names)
+        for d in [5, 15, 30]:
+            pd.DataFrame(
+                data.obsm["X_spectral"][:, 0:d], index = data.obs_names
+            ).to_csv(str(d) + ".dim", header=False, sep="\t")
+            snap.pp.knn(data, use_dims = d)
+            clusters = []
+            for i in np.arange(0.1, 1.501, 0.1):
+                snap.tl.leiden(data, resolution=i)
+                clusters.append(data.obs['leiden'])
+            df = pd.DataFrame(np.array(clusters).T, index = data.obs_names)
+            df.to_csv(str(d) + ".cluster", header=False, sep="\t")
         data.close()
-    df.to_csv("clusters.tsv", header=False, sep="\t")
     """
 }
 
-process end_to_end_batch_correct_snapatac_2 {
+process end_to_end_snapatac_2_cosine {
     //container 'kaizhang/snapatac2:1.99.99.7'
     input:
       tuple val(data), val(nDims)
     output:
-      tuple val("SnapATAC2 (batch correct)"), val(data), path("clusters.tsv")
+      tuple val("SnapATAC2 (cosine)"), val(data), path("*.dim"), path("*.cluster")
 
     """
     #!/usr/bin/env python3
@@ -136,33 +145,39 @@ process end_to_end_batch_correct_snapatac_2 {
     from tempfile import TemporaryDirectory
     import numpy as np
     import pandas as pd
+    if "${data.name}".startswith("human"):
+        genome = snap.genome.hg38
+    elif "${data.name}".startswith("mouse"):
+        genome = snap.genome.mm10
+    else:
+        genome = None
     with TemporaryDirectory(dir="./") as tmp_dir:
         data = snap.pp.import_data(
             fragment_file = "${data.fragments_name_sorted}",
             gff_file = "${data.gene_annotations}",
-            chrom_size = snap.genome.mm10,
+            chrom_size = genome,
             file = tmp_dir + "/tmp.h5ad",
             min_tsse = 0,
             min_num_fragments = 0,
         )
         snap.pp.make_tile_matrix(data)
         snap.pp.select_features(data)
-        snap.tl.spectral(data)
-        snap.pp.mnc_correct(data, "batch", use_dims = 15)
-        snap.pp.knn(data, use_rep="X_spectral_mnn", use_dims = 15)
+        snap.tl.spectral(data, distance_metric="cosine")
 
-        clusters = []
-        for i in np.arange(0.1, 1.501, 0.1):
-            snap.tl.leiden(data, resolution=i)
-            clusters.append(data.obs['leiden'])
-
-        df = pd.DataFrame(np.array(clusters).T, index = data.obs_names)
+        for d in [5, 15, 30]:
+            pd.DataFrame(
+                data.obsm["X_spectral"][:, 0:d], index = data.obs_names
+            ).to_csv(str(d) + ".dim", header=False, sep="\t")
+            snap.pp.knn(data, use_dims = d)
+            clusters = []
+            for i in np.arange(0.1, 1.501, 0.1):
+                snap.tl.leiden(data, resolution=i)
+                clusters.append(data.obs['leiden'])
+            df = pd.DataFrame(np.array(clusters).T, index = data.obs_names)
+            df.to_csv(str(d) + ".cluster", header=False, sep="\t")
         data.close()
-    df.to_csv("clusters.tsv", header=False, sep="\t")
     """
 }
-
-
 
 
 /*******************************************************************************
@@ -401,14 +416,21 @@ process end_to_end_archr {
     input:
       tuple val(data), val(nDims)
     output:
-      tuple val('ArchR'), val(data), path("clusters.tsv")
+      tuple val('ArchR'), val(data), path("*.dim"), path("*.cluster")
 
     """
     #!/usr/bin/env Rscript
     library("ArchR")
     library("parallel")
     set.seed(1)
-    addArchRGenome("mm10")
+
+    if (startsWith("${data.name}", "mouse")) {
+        addArchRGenome("mm10")
+    } else if (startsWith("${data.name}", "human")) {
+        addArchRGenome("hg38")
+    } else {
+        throw("unkown genome")
+    }
 
     ArrowFiles <- createArrowFiles(
         inputFiles = c("${data.fragments_sorted}"),
@@ -425,30 +447,44 @@ process end_to_end_archr {
         outputDirectory = "./",
         copyArrows = F,
     )
-    proj <- addIterativeLSI(
-        ArchRProj = proj,
-        useMatrix = "TileMatrix",
-        dimsToUse = 1:15,
-        name = "IterativeLSI",
-    )
 
-    clusters <- c()
-    for (i in seq(from = 0.1, to = 1.5, by = 0.1)) {
-        proj <- addClusters(
-            input = proj,
-            reducedDims = "IterativeLSI",
-            maxClusters = 100,
-            filterBias = F,
+
+    for (d in c(5, 15, 30)) {
+        proj <- addIterativeLSI(
+            ArchRProj = proj,
+            useMatrix = "TileMatrix",
+            dimsToUse = 1:d,
+            name = "IterativeLSI",
             force=T,
-            resolution = i,
         )
-        clusters <- cbind(clusters, proj\$Clusters)
+
+        mat <- getReducedDims(proj)
+        rownames(mat) <- sapply(rownames(mat), function(x) strsplit(x, '#')[[1]][2])
+        write.table(
+            mat,
+            file = paste(as.character(d), ".dim", sep=""),
+            quote = F, sep = "\t", row.names = T, col.names = F, 
+        )
+
+        clusters <- c()
+        for (i in seq(from = 0.1, to = 1.5, by = 0.1)) {
+            proj <- addClusters(
+                input = proj,
+                reducedDims = "IterativeLSI",
+                maxClusters = 200,
+                filterBias = F,
+                resolution = i,
+                force=T,
+            )
+            clusters <- cbind(clusters, proj\$Clusters)
+        }
+        rownames(clusters) <- sapply(proj\$cellNames, function(x) strsplit(x, '#')[[1]][2])
+        write.table(
+            clusters,
+            file = paste(as.character(d), ".cluster", sep=""),
+            quote = F, sep = "\t", row.names = T, col.names = F, 
+        )
     }
-    rownames(clusters) <- sapply(proj\$cellNames, function(x) strsplit(x, '#')[[1]][2])
-    write.table(
-        clusters, file = "clusters.tsv", quote = F, sep = "\t", row.names = T,
-        col.names = F, 
-    )
     """
 }
 

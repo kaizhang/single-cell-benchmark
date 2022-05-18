@@ -29,6 +29,7 @@ process preproc_snapatac_2 {
 }
 
 process dim_reduct_snapatac_2 {
+    cache false
     //container 'kaizhang/snapatac2:1.99.99.7'
     tag "$name"
     input:
@@ -232,6 +233,7 @@ process  dim_reduct_archr {
         ArchRProj = proj,
         useMatrix = "TileMatrix",
         name = "IterativeLSI",
+        force=T,
     )
     saveArchRProject(ArchRProj = proj, outputDirectory = "archr", load = F)
     """
@@ -252,7 +254,7 @@ process clust_archr {
     library("parallel")
     set.seed(1)
     proj <- loadArchRProject(path = "$archr", force = FALSE, showLogo = F)
-    proj <- addClusters(input = proj, reducedDims = "IterativeLSI")
+    proj <- addClusters(input = proj, reducedDims = "IterativeLSI", force=T)
     saveArchRProject(ArchRProj = proj, outputDirectory = "archr", load = F)
     """
 }
