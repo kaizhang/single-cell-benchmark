@@ -4,33 +4,33 @@ nextflow.enable.dsl=2
 // SnapATAC2
 *******************************************************************************/
 
-process preproc_snapatac_2 {
+process preproc_snapatac2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
-    tag "$data.name"
+    tag "$name"
     input:
-      val(data)
+      tuple val(name), path("name_srt.bed.gz"), path("srt.bed.gz"), path("anno.gff3.gz")
     output:
-      tuple val("$data.name"), path("data.h5ad")
+      tuple val(name), path("data.h5ad")
 
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
     data = snap.pp.import_data(
-        fragment_file = "${data.fragments_name_sorted}",
-        gff_file = "${data.gene_annotations}",
-        chrom_size = snap.genome.mm10,
-        file = "data.h5ad",
-        min_tsse = 0,
-        min_num_fragments = 0,
-        chunk_size = 100,
+        fragment_file="name_srt.bed.gz",
+        gff_file="anno.gff3.gz",
+        chrom_size=snap.genome.mm10.chrom_sizes,
+        file="data.h5ad",
+        min_tsse=0,
+        min_num_fragments=0,
+        chunk_size=100,
     )
-    snap.pp.make_tile_matrix(data, chunk_size = 100)
+    snap.pp.add_tile_matrix(data, chunk_size=100)
     """
 }
 
-process dim_reduct_snapatac_2 {
-    cache false
+process dim_reduct_snapatac2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
+    stageInMode "copy"
     tag "$name"
     input:
       tuple val(name), path(data)
@@ -40,14 +40,16 @@ process dim_reduct_snapatac_2 {
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
+    seed = 5
     data = snap.read("$data")
-    snap.pp.select_features(data)
-    snap.tl.spectral(data)
+    #snap.pp.select_features(data)
+    snap.tl.spectral(data, distance_metric="cosine", features=None)
     """
 }
 
-process clust_snapatac_2 {
+process clust_snapatac2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
+    stageInMode "copy"
     tag "$name"
     input:
       tuple val(name), path(data)
@@ -69,12 +71,12 @@ process clust_snapatac_2 {
 
 process preproc_snapatac_1 {
     container 'kaizhang/snapatac:1.0'
-    tag "$data.name"
+    tag "$name"
 
     input:
-      val(data)
+      tuple val(name), path("name_srt.bed.gz"), path("srt.bed.gz"), path("anno.gff3.gz")
     output:
-      tuple val("$data.name"), path("data.rds")
+      tuple val(name), path("data.rds")
 
     """
     #!/usr/bin/env Rscript
@@ -86,7 +88,7 @@ process preproc_snapatac_1 {
     cmd <- paste(
         "snaptools",
         "snap-pre",
-        "--input-file=${data.fragments_name_sorted}",
+        "--input-file=name_srt.bed.gz",
         "--output-snap=data.snap",
         "--genome-name=mm10",
         "--genome-size=chrom_size.txt",
@@ -121,8 +123,9 @@ process preproc_snapatac_1 {
     """
 }
 
-process dim_reduct_snapatac_1 {
+process dim_reduct_snapatac {
     container 'kaizhang/snapatac:1.0'
+    stageInMode "copy"
     tag "$name"
     input:
       tuple val(name), path(data)
@@ -147,8 +150,9 @@ process dim_reduct_snapatac_1 {
     """
 }
 
-process clust_snapatac_1 {
+process clust_snapatac {
     container 'kaizhang/snapatac:1.0'
+    stageInMode "copy"
     tag "$name"
     input:
       tuple val(name), path(data)
@@ -181,12 +185,12 @@ process clust_snapatac_1 {
 
 process  preproc_archr {
     container 'kaizhang/archr:1.0.1'
-    tag "$data.name"
+    tag "$name"
 
     input:
-      val(data)
+      tuple val(name), path("name_srt.bed.gz"), path("srt.bed.gz"), path("anno.gff3.gz")
     output:
-      tuple val("$data.name"), path("archr")
+      tuple val(name), path("archr")
 
     """
     #!/usr/bin/env Rscript
@@ -196,7 +200,7 @@ process  preproc_archr {
     addArchRGenome("mm10")
 
     ArrowFiles <- createArrowFiles(
-        inputFiles = c("${data.fragments_sorted}"),
+        inputFiles = c("srt.bed.gz"),
         sampleNames = c("sample"),
         minTSS = 0,
         minFrags = 0, 
@@ -216,6 +220,7 @@ process  preproc_archr {
 
 process  dim_reduct_archr {
     container 'kaizhang/archr:1.0.1'
+    stageInMode "copy"
     tag "$name"
 
     input:
@@ -241,6 +246,7 @@ process  dim_reduct_archr {
 
 process clust_archr {
     container 'kaizhang/archr:1.0.1'
+    stageInMode "copy"
     tag "$name"
 
     input:

@@ -1,6 +1,4 @@
-FROM rockylinux:8
-RUN dnf -y install dnf-plugins-core epel-release
-RUN dnf config-manager --set-enabled powertools && dnf -y update
-RUN dnf -y install python39 python39-wheel
-RUN pip3 install --upgrade pip
-RUN pip3 install anndata scale leidenalg
+FROM python:3.7-slim
+RUN apt-get update && apt-get install -y --no-install-recommends gcc
+RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+RUN pip install anndata scale==1.1.2 leidenalg

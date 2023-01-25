@@ -1,0 +1,6 @@
+.nextflow*
+.cache
+.config
+work*
+dataset
+result
