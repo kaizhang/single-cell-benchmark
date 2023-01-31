@@ -1,0 +1,13 @@
+[package]
+name = "library"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "subsample"
+path = "src/subsample/bin/main.rs"
+
+[dependencies]
+bed-utils = { git = "https://github.com/kaizhang/bed-utils.git", rev = "35d708dd173c319aba4cc930ff10268f90fbf271" }
+flate2 = "1.0"
+itertools = "0.10.3"

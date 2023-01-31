@@ -1,3 +1,4 @@
-
-work_dir="./work_acc"
-nextflow run src/accuracy/main.nf -resume -w $work_dir $@
+current_dir=`pwd`
+pipeline_dir="pipelines/accuracy"
+cd $pipeline_dir
+nextflow run main.nf -resume $@

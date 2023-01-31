@@ -9,7 +9,7 @@ process import_dataset {
 
     exec:
     list = []
-    file(dir).eachDir { item -> 
+    file("../../" + dir).eachDir { item -> 
         list << tuple(type, item.getBaseName(), item + "/matrix.h5ad")
     }
 }

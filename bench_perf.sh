@@ -1,2 +1,4 @@
-work_dir="./work_perf"
-nextflow run src/performance/main.nf -w $work_dir -with-trace -resume -qs 1 $@
+current_dir=`pwd`
+pipeline_dir="pipelines/performance"
+cd $pipeline_dir
+nextflow run main.nf -with-report $current_dir/perf_report.html -resume -qs 1 $@
