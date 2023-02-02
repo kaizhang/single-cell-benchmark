@@ -8,7 +8,7 @@ process preproc_snapatac2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
     tag "$name"
     input:
-      tuple val(name), path("name_srt.bed.gz"), path("srt.bed.gz"), path("anno.gff3.gz")
+      tuple val(name), path("nsrt.tsv.gz"), path("srt.tsv.gz")
     output:
       tuple val(name), path("data.h5ad")
 
@@ -16,15 +16,13 @@ process preproc_snapatac2 {
     #!/usr/bin/env python3
     import snapatac2 as snap
     data = snap.pp.import_data(
-        fragment_file="name_srt.bed.gz",
-        gff_file="anno.gff3.gz",
-        chrom_size=snap.genome.mm10.chrom_sizes,
+        fragment_file="nsrt.tsv.gz",
+        genome=snap.genome.hg38,
         file="data.h5ad",
         min_tsse=0,
         min_num_fragments=0,
-        chunk_size=100,
     )
-    snap.pp.add_tile_matrix(data, chunk_size=100)
+    snap.pp.add_tile_matrix(data)
     """
 }
 
@@ -34,16 +32,12 @@ process dim_reduct_snapatac2 {
     tag "$name"
     input:
       tuple val(name), path(data)
-    output:
-      tuple val(name), path(data)
 
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
-    seed = 9
     data = snap.read("$data")
-    snap.pp.select_features(data, most_variable=100000)
-    snap.tl.spectral(data, distance_metric="cosine")
+    snap.tl.spectral(data, features=None, distance_metric="cosine")
     """
 }
 
@@ -125,28 +119,31 @@ process preproc_snapatac_1 {
 
 process dim_reduct_snapatac {
     container 'kaizhang/snapatac:1.0'
-    stageInMode "copy"
     tag "$name"
+
     input:
-      tuple val(name), path(data)
-    output:
-      tuple val(name), path("data.rds")
+      tuple val(name), path("data.h5ad")
 
     """
     #!/usr/bin/env Rscript
-    library(SnapATAC)
-    x.sp <- readRDS("${data}")
-    bin.cov <- log10(Matrix::colSums(x.sp@bmat)+1)
-    bin.cutoff <- quantile(bin.cov[bin.cov > 0], 0.95)
-    idy <- which(bin.cov <= bin.cutoff & bin.cov > 0)
-    x.sp <- x.sp[, idy, mat="bmat"]
+    library("Matrix")
+    library("rhdf5")
+    set.seed(2022)
 
-    x.sp = runDiffusionMaps(
-      obj=x.sp,
-      input.mat="bmat", 
-      num.eigs=50
+    file = H5Fopen("data.h5ad", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- sparseMatrix(j = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=H5Aread(H5Aopen(x, "shape"))
     )
-    saveRDS(x.sp, file="data.rds")
+
+    x.sp <- SnapATAC::newSnap()
+    x.sp@bmat <- data
+    x.sp <- SnapATAC::makeBinary(x.sp, mat="bmat")
+    SnapATAC::runDiffusionMaps(
+            obj=x.sp,
+            input.mat="bmat", 
+            num.eigs=30
+    )
     """
 }
 
@@ -188,7 +185,7 @@ process  preproc_archr {
     tag "$name"
 
     input:
-      tuple val(name), path("name_srt.bed.gz"), path("srt.bed.gz"), path("anno.gff3.gz")
+      tuple val(name), path("nsrt.tsv.gz"), path("srt.tsv.gz")
     output:
       tuple val(name), path("archr")
 
@@ -197,10 +194,10 @@ process  preproc_archr {
     library("ArchR")
     library("parallel")
     set.seed(1)
-    addArchRGenome("mm10")
+    addArchRGenome("hg38")
 
     ArrowFiles <- createArrowFiles(
-        inputFiles = c("srt.bed.gz"),
+        inputFiles = c("srt.tsv.gz"),
         sampleNames = c("sample"),
         minTSS = 0,
         minFrags = 0, 
@@ -218,30 +215,32 @@ process  preproc_archr {
     """
 }
 
-process  dim_reduct_archr {
+process dim_reduct_archr {
     container 'kaizhang/archr:1.0.1'
-    stageInMode "copy"
     tag "$name"
 
     input:
-      tuple val(name), path(archr)
-    output:
-      tuple val(name), path("archr")
+      tuple val(name), path("data.h5ad")
 
     """
     #!/usr/bin/env Rscript
     library("ArchR")
-    library("parallel")
-    set.seed(1)
-    proj <- loadArchRProject(path = "$archr", force = FALSE, showLogo = F)
-    proj <- addIterativeLSI(
-        ArchRProj = proj,
-        varFeatures = 100000,
-        useMatrix = "TileMatrix",
-        name = "IterativeLSI",
-        force=T,
+    library("Matrix")
+    library("rhdf5")
+    set.seed(2022)
+    file = H5Fopen("data.h5ad", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
     )
-    saveArchRProject(ArchRProj = proj, outputDirectory = "archr", load = F)
+    ArchR:::.computeLSI(mat = data,
+        LSIMethod = 2,
+        scaleTo = 10^4,
+        nDimensions = 30,
+        binarize = TRUE, 
+        outlierQuantiles = NULL,
+        seed = 1
+    )
     """
 }
 
@@ -263,5 +262,121 @@ process clust_archr {
     proj <- loadArchRProject(path = "$archr", force = FALSE, showLogo = F)
     proj <- addClusters(input = proj, reducedDims = "IterativeLSI", force=T)
     saveArchRProject(ArchRProj = proj, outputDirectory = "archr", load = F)
+    """
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// CisTopic
+////////////////////////////////////////////////////////////////////////////////
+
+process dim_reduct_pycistopic {
+    container 'kaizhang/pycistopic:latest'
+    tag "$name"
+
+    input:
+      tuple val(name), path("data.h5ad")
+
+    """
+    #!/usr/bin/env python3
+    import anndata as ad
+    import numpy as np
+    from pycisTopic.cistopic_class import *
+
+    data = ad.read("data.h5ad")
+    obj = create_cistopic_object(
+        data.X.T.tocsr(),
+        cell_names=list(data.obs_names),
+        region_names=list(data.var_names),
+    )
+    run_cgs_models(
+        obj,
+        n_topics=[30],
+        n_iter=300,
+        random_state=555,
+        alpha=50,
+        alpha_by_topic=True,
+        eta=0.1,
+        eta_by_topic=False,
+        n_cpu=6,
+        save_path=None,
+        _temp_dir="/tmp",
+    )
+    """
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// PeakVI
+////////////////////////////////////////////////////////////////////////////////
+
+process dim_reduct_peakvi {
+    container 'kaizhang/scvi-tools:0.19.0'
+    tag "$name"
+    errorStrategy 'ignore'
+
+    input:
+      tuple val(name), path("data.h5ad")
+
+    """
+    #!/usr/bin/env python3
+    import anndata as ad
+    import numpy as np
+    import scvi
+    import math
+    data = ad.read("data.h5ad")
+    scvi.model.PEAKVI.setup_anndata(data)
+    pvi = scvi.model.PEAKVI(data, n_latent=30)
+    pvi.train()
+    """
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Signac
+////////////////////////////////////////////////////////////////////////////////
+
+process dim_reduct_signac {
+    container 'kaizhang/signac:1.6'
+    tag "$name"
+
+    input:
+      tuple val(name), path("data.h5ad")
+
+    """
+    #!/usr/bin/env Rscript
+    library("rhdf5")
+    set.seed(2022)
+
+    file = H5Fopen("data.h5ad", flags = "H5F_ACC_RDONLY")
+    x <- H5Gopen(file, "X")
+    data <- Matrix::sparseMatrix(i = x\$indices, p = x\$indptr,
+        x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
+    )
+    result <- Signac:::RunTFIDF.default(data,method = 1)
+    Signac:::RunSVD.default(result, n = 50)
+    """
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Scale
+////////////////////////////////////////////////////////////////////////////////
+process dim_reduct_scale {
+    container 'kaizhang/scale:1.1.2'
+    tag "$name"
+
+    input:
+      tuple val(name), path("data.h5ad")
+
+    """
+    #!/usr/bin/env python3
+    import anndata as ad
+    import numpy as np
+    import subprocess
+    data = ad.read("data.h5ad")
+    k = np.unique(data.obs["cell_annotation"]).size
+    subprocess.run([
+      "SCALE.py", "-d", "data.h5ad", "-k", str(k), "--min_peaks", "0",
+      "--min_cells", "0", "-l", "30",
+    ], check = True)
     """
 }
