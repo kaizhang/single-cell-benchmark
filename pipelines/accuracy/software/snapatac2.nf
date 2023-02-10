@@ -42,44 +42,19 @@ process dim_reduct_cosine {
 process dim_reduct_nystrom {
     //container 'kaizhang/snapatac2:1.99.99.7'
     input:
-      val(data)
+      tuple val(name), path("data.h5ad"), val(fraction)
     output:
-      tuple val("SnapATAC2"), val(data), path("${data.name}_snapatac2_nystrom_${data.samplingFraction}_${data.randomSeed}_reduced_dim.tsv")
-
+      tuple val(name), val(fraction), val("SnapATAC2"), path("reduced_dim.tsv")
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
     import numpy as np
-    adata = snap.read("${data.anndata}", backed=None)
+    seed = 1
+    adata = snap.read("data.h5ad", backed='r')
     result = snap.tl.spectral(adata, features=None, chunk_size=500,
-        sample_size=${data.samplingFraction}, random_state=${data.randomSeed},
-        inplace=False
-    )
-    output = "${data.name}_snapatac2_nystrom_${data.samplingFraction}_${data.randomSeed}_reduced_dim.tsv"
-    np.savetxt(output, result[1], delimiter="\t")
-    """
-}
-
-process dim_reduct_cosine_nystrom {
-    //container 'kaizhang/snapatac2:1.99.99.7'
-    input:
-      val(data)
-    output:
-      tuple val("SnapATAC2_cosine"), val(data), path("reduced_dim.tsv")
-
-    """
-    #!/usr/bin/env python3
-    import snapatac2 as snap
-    import numpy as np
-    adata = snap.read("${data.anndata}", backed=None)
-    result = snap.tl.spectral(
-        adata,
         distance_metric="cosine",
-        features=None,
-        chunk_size=500,
-        sample_size=${data.samplingFraction},
-        random_state=${data.randomSeed},
-        inplace=False,
+        sample_size=${fraction}, random_state=0,
+        inplace=False
     )
     np.savetxt("reduced_dim.tsv", result[1], delimiter="\t")
     """

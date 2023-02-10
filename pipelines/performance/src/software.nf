@@ -1,12 +1,13 @@
 nextflow.enable.dsl=2
 
-/*******************************************************************************
-// SnapATAC2
-*******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
+// SnapATAC2                                                                  //
+////////////////////////////////////////////////////////////////////////////////
 
 process preproc_snapatac2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
     tag "$name"
+    cpus 4
     input:
       tuple val(name), path("nsrt.tsv.gz"), path("srt.tsv.gz")
     output:
@@ -30,6 +31,7 @@ process dim_reduct_snapatac2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
     stageInMode "copy"
     tag "$name"
+    cpus 4
     input:
       tuple val(name), path(data)
 
@@ -45,6 +47,7 @@ process clust_snapatac2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
     stageInMode "copy"
     tag "$name"
+    cpus 4
     input:
       tuple val(name), path(data)
     output:
@@ -59,13 +62,14 @@ process clust_snapatac2 {
     """
 }
 
-/*******************************************************************************
-// SnapATAC R version
-*******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
+// SnapATAC R version                                                         //
+////////////////////////////////////////////////////////////////////////////////
 
 process preproc_snapatac_1 {
     container 'kaizhang/snapatac:1.0'
     tag "$name"
+    cpus 4
 
     input:
       tuple val(name), path("name_srt.bed.gz"), path("srt.bed.gz"), path("anno.gff3.gz")
@@ -120,6 +124,7 @@ process preproc_snapatac_1 {
 process dim_reduct_snapatac {
     container 'kaizhang/snapatac:1.0'
     tag "$name"
+    cpus 4
 
     input:
       tuple val(name), path("data.h5ad")
@@ -151,6 +156,7 @@ process clust_snapatac {
     container 'kaizhang/snapatac:1.0'
     stageInMode "copy"
     tag "$name"
+    cpus 4
     input:
       tuple val(name), path(data)
     output:
@@ -176,13 +182,14 @@ process clust_snapatac {
     """
 }
 
-/*******************************************************************************
-// ArchR
-*******************************************************************************/
 
+////////////////////////////////////////////////////////////////////////////////
+// ArchR                                                                      //
+////////////////////////////////////////////////////////////////////////////////
 process  preproc_archr {
     container 'kaizhang/archr:1.0.1'
     tag "$name"
+    cpus 4
 
     input:
       tuple val(name), path("nsrt.tsv.gz"), path("srt.tsv.gz")
@@ -218,6 +225,7 @@ process  preproc_archr {
 process dim_reduct_archr {
     container 'kaizhang/archr:1.0.1'
     tag "$name"
+    cpus 4
 
     input:
       tuple val(name), path("data.h5ad")
@@ -248,6 +256,7 @@ process clust_archr {
     container 'kaizhang/archr:1.0.1'
     stageInMode "copy"
     tag "$name"
+    cpus 4
 
     input:
       tuple val(name), path(archr)
@@ -267,12 +276,12 @@ process clust_archr {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// CisTopic
+// CisTopic                                                                   //
 ////////////////////////////////////////////////////////////////////////////////
-
 process dim_reduct_pycistopic {
     container 'kaizhang/pycistopic:latest'
     tag "$name"
+    cpus 4
 
     input:
       tuple val(name), path("data.h5ad")
@@ -307,13 +316,12 @@ process dim_reduct_pycistopic {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// PeakVI
+// PeakVI                                                                     //
 ////////////////////////////////////////////////////////////////////////////////
-
 process dim_reduct_peakvi {
     container 'kaizhang/scvi-tools:0.19.0'
     tag "$name"
-    errorStrategy 'ignore'
+    cpus 4
 
     input:
       tuple val(name), path("data.h5ad")
@@ -332,12 +340,12 @@ process dim_reduct_peakvi {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Signac
+// Signac                                                                     //
 ////////////////////////////////////////////////////////////////////////////////
-
 process dim_reduct_signac {
     container 'kaizhang/signac:1.6'
     tag "$name"
+    cpus 4
 
     input:
       tuple val(name), path("data.h5ad")
@@ -353,16 +361,17 @@ process dim_reduct_signac {
         x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
     )
     result <- Signac:::RunTFIDF.default(data,method = 1)
-    Signac:::RunSVD.default(result, n = 50)
+    Signac:::RunSVD.default(result, n = 30)
     """
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Scale
+// Scale                                                                      //
 ////////////////////////////////////////////////////////////////////////////////
 process dim_reduct_scale {
     container 'kaizhang/scale:1.1.2'
     tag "$name"
+    cpus 4
 
     input:
       tuple val(name), path("data.h5ad")
@@ -373,9 +382,8 @@ process dim_reduct_scale {
     import numpy as np
     import subprocess
     data = ad.read("data.h5ad")
-    k = np.unique(data.obs["cell_annotation"]).size
     subprocess.run([
-      "SCALE.py", "-d", "data.h5ad", "-k", str(k), "--min_peaks", "0",
+      "SCALE.py", "-d", "data.h5ad", "-k", "10", "--min_peaks", "0",
       "--min_cells", "0", "-l", "30",
     ], check = True)
     """

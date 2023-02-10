@@ -2,6 +2,7 @@ nextflow.enable.dsl=2
 
 include { import_dataset } from './dataset.nf'
 include { bench_dim_reduct } from './benchmark/dim_reduct.nf'
+include { bench_subsample } from './benchmark/subsample.nf'
 
 workflow {
     datasets = Channel.fromList([
@@ -10,4 +11,5 @@ workflow {
     ]) | import_dataset | flatten | collate(3)
 
     bench_dim_reduct(datasets)
+    bench_subsample(datasets)
 }

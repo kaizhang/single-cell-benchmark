@@ -58,7 +58,7 @@ process merge {
     input:
       path(files)
     output:
-      tuple val(350000), path("nsrt.tsv.gz"), path("srt.tsv.gz")
+      tuple val(320000), path("nsrt.tsv.gz"), path("srt.tsv.gz")
 
     """
     zcat ${files.join(' ')} | gzip > nsrt.tsv.gz
@@ -91,6 +91,7 @@ process prep_h5ad {
 
     """
     #!/usr/bin/env python
+
     import snapatac2 as snap
     data = snap.pp.import_data(
         fragment_file="nsrt.tsv.gz",
@@ -99,7 +100,7 @@ process prep_h5ad {
         min_num_fragments=0,
     )
     data = snap.pp.add_tile_matrix(data, inplace=False)
-    snap.pp.select_features(data, most_variable=100000)
+    snap.pp.select_features(data, most_variable=None)
     data[:, data.var["selected"]].write("data.h5ad", compression="gzip")
     """
 }

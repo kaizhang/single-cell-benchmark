@@ -16,6 +16,8 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 FROM python:3.9-slim
 ARG APP=/usr/bin
 
+RUN apt-get update && apt-get install -y procps tabix
+
 COPY --from=builder /rust-bin/artifacts/* ${APP}
 
 COPY --from=builder /wheels /wheels
