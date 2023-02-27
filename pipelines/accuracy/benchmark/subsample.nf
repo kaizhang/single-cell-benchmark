@@ -1,6 +1,8 @@
 nextflow.enable.dsl=2
 
-include { dim_reduct_nystrom as snapatac2 } from '../software/snapatac2.nf'
+include { dim_reduct_nystrom as snapatac2;
+          dim_reduct_nystrom2 as snapatac2_degree;
+        } from '../software/snapatac2.nf'
 
 include { dim_reduct_archr_subsample as archr } from '../software/archr.nf'
 
@@ -95,12 +97,15 @@ workflow bench_subsample {
     main:
         data = datasets
             | count_cells
-            | filter { it[2].text.toInteger() > 20000 }
+            | filter { it[2].text.toInteger() > 5000 }
             | map { [it[0], it[1]] }
-        bench_data = data | combine([0.1, 0.2, 0.5, 1.0])
+        bench_data = data | combine([0.05, 0.1, 0.2, 0.3, 1.0])
 
         snapatac2(bench_data)
-            | concat(archr(bench_data))
+            | concat(
+                archr(bench_data),
+                snapatac2_degree(bench_data),
+            )
             | combine(data, by: 0)
             | accuracy
             | toSortedList

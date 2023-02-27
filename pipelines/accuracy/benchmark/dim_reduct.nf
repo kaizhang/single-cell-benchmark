@@ -1,5 +1,7 @@
 nextflow.enable.dsl=2
 
+include { download_hg38; download_hg19 } from '../dataset.nf'
+
 include { dim_reduct_snapatac as snapatac; } from '../software/snapatac.nf'
 
 include { dim_reduct_jaccard as snapatac2_jaccard;
@@ -20,6 +22,7 @@ include { dim_reduct_archr_1 as archr_1;
 include { dim_reduct_peakvi as peakvi } from '../software/peakvi.nf'
 include { dim_reduct_scale as scale } from '../software/scale.nf'
 include { dim_reduct_pycistopic as cisTopic } from '../software/pycistopic.nf'
+include { dim_reduct_scbasset as scBasset } from '../software/scbasset.nf'
 
 process accuracy {
     //container 'kaizhang/snapatac2:1.99.99.7'
@@ -200,6 +203,11 @@ workflow bench_dim_reduct {
     main:
         dr_bench_data = datasets | map { [it[1], it[2]] }
 
+        hg19_dataset = ["BoneMarrow_Chen_2019", "Buenrostro_2018"]
+        dr_bench_data_hg19 = dr_bench_data
+            | filter { hg19_dataset.contains(it[0]) }
+            | combine(download_hg19())
+
         reports = snapatac2_jaccard(dr_bench_data) | concat(
             snapatac2_cosine(dr_bench_data),
 
@@ -216,6 +224,7 @@ workflow bench_dim_reduct {
 
             peakvi(dr_bench_data),
             scale(dr_bench_data),
+            scBasset(dr_bench_data_hg19),
 
             cisTopic(dr_bench_data),
         )

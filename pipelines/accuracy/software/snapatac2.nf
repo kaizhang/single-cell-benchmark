@@ -60,6 +60,28 @@ process dim_reduct_nystrom {
     """
 }
 
+process dim_reduct_nystrom2 {
+    //container 'kaizhang/snapatac2:1.99.99.7'
+    input:
+      tuple val(name), path("data.h5ad"), val(fraction)
+    output:
+      tuple val(name), val(fraction), val("SnapATAC2 (degree)"), path("reduced_dim.tsv")
+    """
+    #!/usr/bin/env python3
+    import snapatac2 as snap
+    import numpy as np
+    seed = 1
+    adata = snap.read("data.h5ad", backed='r')
+    result = snap.tl.spectral(adata, features=None, chunk_size=500,
+        distance_metric="cosine",
+        sample_size=${fraction}, random_state=0,
+        sample_method="degree",
+        inplace=False
+    )
+    np.savetxt("reduced_dim.tsv", result[1], delimiter="\t")
+    """
+}
+
 process end_to_end_snapatac_2 {
     //container 'kaizhang/snapatac2:1.99.99.7'
     input:
