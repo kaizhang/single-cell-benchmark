@@ -97,14 +97,14 @@ workflow bench_subsample {
     main:
         data = datasets
             | count_cells
-            | filter { it[2].text.toInteger() > 5000 }
+            | filter { it[2].text.toInteger() > 20000 }
             | map { [it[0], it[1]] }
-        bench_data = data | combine([0.05, 0.1, 0.2, 0.3, 1.0])
+        bench_data = data | combine([0.1, 0.2, 0.3, 1.0])
 
         snapatac2(bench_data)
             | concat(
                 archr(bench_data),
-                snapatac2_degree(bench_data),
+                //snapatac2_degree(bench_data),
             )
             | combine(data, by: 0)
             | accuracy
