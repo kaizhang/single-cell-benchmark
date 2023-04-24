@@ -1,9 +1,8 @@
 nextflow.enable.dsl=2
 
 process dim_reduct_jaccard {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     cpus 4
-    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad")
     output:
@@ -20,9 +19,8 @@ process dim_reduct_jaccard {
 }
 
 process dim_reduct_cosine {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     cpus 4
-    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad")
     output:
@@ -40,7 +38,7 @@ process dim_reduct_cosine {
 }
 
 process dim_reduct_svd {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     cpus 4
     input:
       tuple val(name), path("data.h5ad")
@@ -73,7 +71,7 @@ process dim_reduct_svd {
 
 
 process dim_reduct_nystrom {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     input:
       tuple val(name), path("data.h5ad"), val(fraction)
     output:
@@ -94,7 +92,7 @@ process dim_reduct_nystrom {
 }
 
 process dim_reduct_nystrom2 {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     input:
       tuple val(name), path("data.h5ad"), val(fraction)
     output:
@@ -116,7 +114,7 @@ process dim_reduct_nystrom2 {
 }
 
 process end_to_end_snapatac_2 {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     input:
       val(data)
     output:
@@ -160,7 +158,7 @@ process end_to_end_snapatac_2 {
 }
 
 process end_to_end_snapatac_2_cosine {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     input:
       val(data)
     output:

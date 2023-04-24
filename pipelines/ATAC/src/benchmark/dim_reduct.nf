@@ -1,6 +1,6 @@
 nextflow.enable.dsl=2
 
-include { download_hg38; download_hg19 } from '../dataset.nf'
+include { download_hg38; download_hg19; } from '../dataset.nf'
 
 include { dim_reduct_snapatac as snapatac; } from '../software/snapatac.nf'
 
@@ -157,7 +157,7 @@ process umap {
     import pandas as pd
     import anndata as ad
     import matplotlib.pyplot as plt
-    import colorcet
+    import glasbey
     import numpy as np
     data = pd.read_csv("${report}", sep="\t")
     dfs = []
@@ -182,7 +182,7 @@ process umap {
             col="method",
             col_wrap=4,
             hue="cell_annotation",
-            palette = colorcet.glasbey[:n_label],
+            palette = glasbey.create_palette(palette_size=n_label),
             sharex=False,
             sharey=False,
         )
@@ -201,37 +201,37 @@ process umap {
 workflow bench_dim_reduct {
     take: datasets
     main:
-        dr_bench_data = datasets | map { [it[1], it[2]] }
-
         hg19_dataset = ["BoneMarrow_Chen_2019", "Buenrostro_2018"]
-        dr_bench_data_hg19 = dr_bench_data
+        '''
+        dr_bench_data_hg19 = datasets
             | filter { hg19_dataset.contains(it[0]) }
             | combine(download_hg19())
+        '''
 
-        reports = snapatac2_jaccard(dr_bench_data) | concat(
-            snapatac2_cosine(dr_bench_data),
-            snapatac2_svd(dr_bench_data),
+        reports = snapatac2_jaccard(datasets) | concat(
+            snapatac2_cosine(datasets),
+            snapatac2_svd(datasets),
 
-            snapatac(dr_bench_data),
+            //snapatac(datasets),
 
-            epiScanpy(dr_bench_data),
+            epiScanpy(datasets),
 
-            signac_1(dr_bench_data),
-            signac_2(dr_bench_data),
-            signac_3(dr_bench_data),
-            signac_4(dr_bench_data),
+            signac_1(datasets),
+            signac_2(datasets),
+            signac_3(datasets),
+            signac_4(datasets),
 
-            archr_1(dr_bench_data),
-            archr_2(dr_bench_data),
-            archr_3(dr_bench_data),
+            archr_1(datasets),
+            archr_2(datasets),
+            archr_3(datasets),
 
-            peakvi(dr_bench_data),
-            scale(dr_bench_data),
-            scBasset(dr_bench_data_hg19),
+            //peakvi(dr_bench_data),
+            //scale(dr_bench_data),
+            //scBasset(dr_bench_data_hg19),
 
-            cisTopic(dr_bench_data),
+            //cisTopic(dr_bench_data),
         )
-            | combine(dr_bench_data, by: 0)
+            | combine(datasets, by: 0)
             | accuracy
             | toSortedList
             | report
