@@ -115,34 +115,32 @@ process plot {
     import pandas as pd
     from plotnine import *
     import numpy as np
-    import colorcet
+    import itertools
+    import glasbey
 
     data = pd.read_csv("benchmark.tsv", sep="\t")
     df = data[["algorithm", "dataset", "ARI", "silhouette_score"]]
     my_order = df.groupby(by=["algorithm"])["ARI"].mean().sort_values().index[::-1]
     df['algorithm'] = pd.Categorical(df['algorithm'], ordered=True, categories=my_order)
 
-
-    ( ggplot(df, aes(x="algorithm", y="ARI"))
-        + geom_violin(df)
-        + theme(axis_text_x=element_text(angle=90, hjust=1))
-        + geom_jitter()
-    ).save(filename='benchmark1.pdf')
-
     n_label = np.unique(df['algorithm'].to_numpy()).size
     n = -(np.unique(df['dataset'].to_numpy()).size // -3)
+    shapes = ['o', 's', '^', 'v', 'D', 'X', '*', 'p', 'h', 'P', 'd', '<', '>']
+    shapes = list(itertools.islice(itertools.cycle(shapes), n_label))
+    colors = glasbey.create_palette(palette_size=n_label)
     ( ggplot(df, aes(x='silhouette_score', y='ARI', color='factor(algorithm)'))
         + geom_point(aes(shape='factor(algorithm)'))
         + facet_wrap('dataset', scales="free", ncol=3)
-        + scale_fill_manual(colorcet.glasbey[:n_label])
-        + scale_color_manual(colorcet.glasbey[:n_label])
+        + scale_fill_manual(colors)
+        + scale_color_manual(colors)
+        + scale_shape_manual(values=shapes)
         + theme_light(base_size=7, base_family="Arial")
         + theme(
             figure_size=(2 * 3, 2 * n),
             subplots_adjust={'hspace':0.2, 'wspace':0.2},
             legend_key=element_rect(color = "white"),
         )
-    ).save(filename='benchmark2.pdf')
+    ).save(filename='ARI_Silhouette.pdf')
     """
 }
 
