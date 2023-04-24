@@ -19,7 +19,7 @@ process dim_reduct {
     adata.var_names_make_unique()
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
-    sc.pp.highly_variable_genes(adata, n_top_genes=2000) 
+    sc.pp.highly_variable_genes(adata, n_top_genes=5000)
     adata = adata[:, adata.var.highly_variable]
     snap.tl.spectral(adata, features=None)
     np.savetxt("reduced_dim.tsv", adata.obsm['X_spectral'], delimiter="\t")

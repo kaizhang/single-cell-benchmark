@@ -1,32 +1,32 @@
 nextflow.enable.dsl=2
 
-process data_Trapnell { 
+process data_Koh { 
     container 'kaizhang/scatac-bench:0.1.0'
     output:
-      tuple val("Trapnell"), path("Trapnell.h5ad")
+      tuple val("Koh"), path("Koh.h5ad")
     """
     #!/usr/bin/env python
     import pooch
     pooch.retrieve(
-        "https://osf.io/download/j5w29/",
-        "sha256:25b6e3614e5dc2409b4351ea7e88db24ed9d02e902730f8ffcbb1fe1a85885c1",
-        fname="Trapnell.h5ad",
+        "https://osf.io/download/97pfy/",
+        "sha256:184b2f045fd4067b9101084abc5488da20fee77848b696a6bf129c5ec904cbed",
+        fname="Koh.h5ad",
         path="./",
     )
     """
 }
 
-process data_TrapnellTCC { 
+process data_Kumar { 
     container 'kaizhang/scatac-bench:0.1.0'
     output:
-      tuple val("TrapnellTCC"), path("TrapnellTCC.h5ad")
+      tuple val("Kumar"), path("Kumar.h5ad")
     """
     #!/usr/bin/env python
     import pooch
     pooch.retrieve(
-        "https://osf.io/download/y54zb/",
-        "sha256:94e090f5092fadb9f7e6c9bac25b554e4ce002ea90f0691502a864796cb65163",
-        fname="TrapnellTCC.h5ad",
+        "https://osf.io/download/gu6qv/",
+        "sha256:67ade87f04955bf7f78e54786ec3ffb25035c4d1b832e90de6f19556ffc4d103",
+        fname="Kumar.h5ad",
         path="./",
     )
     """
@@ -85,8 +85,8 @@ workflow download_dataset {
         data = data_Zhengmix8eq() | concat(
             data_Zhengmix4eq(),
             data_Zhengmix4uneq(),
-            data_Trapnell(),
-            data_TrapnellTCC(),
+            data_Koh(),
+            data_Kumar(),
         )
 
     emit:

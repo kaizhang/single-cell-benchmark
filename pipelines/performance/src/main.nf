@@ -11,6 +11,7 @@ include { preproc_snapatac2;
           dim_reduct_peakvi;
           dim_reduct_signac;
           dim_reduct_scale;
+          dim_reduct_episcanpy;
 
           clust_snapatac;
           clust_snapatac2;
@@ -38,6 +39,7 @@ workflow {
     dim_reduct_snapatac2(h5ads)
     dim_reduct_archr(h5ads)
     dim_reduct_signac(h5ads)
+    dim_reduct_episcanpy(h5ads)
     dim_reduct_snapatac(h5ads | filter { it[0] <= 30000 })
     dim_reduct_pycistopic(h5ads | filter { it[0] <= 10000 })
     //dim_reduct_peakvi(h5ads | filter {it[0] <= 20000 })

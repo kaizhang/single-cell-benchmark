@@ -6,6 +6,7 @@ include { dim_reduct_snapatac as snapatac; } from '../software/snapatac.nf'
 
 include { dim_reduct_jaccard as snapatac2_jaccard;
           dim_reduct_cosine as snapatac2_cosine;
+          dim_reduct_svd as snapatac2_svd;
         } from '../software/snapatac2.nf'
 
 include { dim_reduct_signac_1 as signac_1;
@@ -23,6 +24,7 @@ include { dim_reduct_peakvi as peakvi } from '../software/peakvi.nf'
 include { dim_reduct_scale as scale } from '../software/scale.nf'
 include { dim_reduct_pycistopic as cisTopic } from '../software/pycistopic.nf'
 include { dim_reduct_scbasset as scBasset } from '../software/scbasset.nf'
+include { dim_reduct_episcanpy as epiScanpy } from '../software/episcanpy.nf'
 
 process accuracy {
     //container 'kaizhang/snapatac2:1.99.99.7'
@@ -210,8 +212,11 @@ workflow bench_dim_reduct {
 
         reports = snapatac2_jaccard(dr_bench_data) | concat(
             snapatac2_cosine(dr_bench_data),
+            snapatac2_svd(dr_bench_data),
 
             snapatac(dr_bench_data),
+
+            epiScanpy(dr_bench_data),
 
             signac_1(dr_bench_data),
             signac_2(dr_bench_data),

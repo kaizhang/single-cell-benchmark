@@ -388,3 +388,28 @@ process dim_reduct_scale {
     ], check = True)
     """
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// epiScanpy
+////////////////////////////////////////////////////////////////////////////////
+process dim_reduct_episcanpy {
+    container 'kaizhang/episcanpy:0.4.0'
+    tag "$name"
+    cpus 4
+
+    input:
+      tuple val(name), path("data.h5ad")
+
+    """
+    #!/usr/bin/env python
+    import anndata as ad
+    import episcanpy.api as epi
+    import scanpy as sc
+    import numpy as np
+
+    data = ad.read("data.h5ad")
+    epi.pp.normalize_per_cell(data)
+    epi.pp.log1p(data)
+    epi.pp.pca(data, n_comps=30)
+    """
+}

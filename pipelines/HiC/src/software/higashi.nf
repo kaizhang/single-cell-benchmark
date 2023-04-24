@@ -7,7 +7,7 @@ process dim_reduct_higashi {
     label "gpu"
 
     input:
-      tuple val(name), val(_), path("data.txt"), path("config.JSON"), path("chrom.sizes")
+      tuple val(name), val(_), path("data.txt"), path("config.JSON"), path("chrom.sizes"), path("label_info.pickle")
     output:
       tuple val(name), val('Higashi'), path("reduced_dim.tsv")
 
@@ -17,7 +17,6 @@ process dim_reduct_higashi {
     import pickle
     import numpy as np
 
-    pickle.dump({}, open("label_info.pickle", "wb"))
     higashi_model = Higashi("config.JSON")
     higashi_model.config['genome_reference_path'] = "chrom.sizes"
     higashi_model.config['dimensions'] = 30

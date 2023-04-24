@@ -15,6 +15,7 @@ Benchmark data is stored in `anndata` format. The `anndata` object should contai
 
 1. `adata.X`: cell by feature count matrix. The format of feature names should be: `chr:start-end`.
 2. `adata.obs["cell_annotation"]`: cluster/cell-type annotation of each barcode.
+3. `data.obs['batch']`: batch annotation of each barcode (optional).
 
 How to run benchmark
 --------------------
