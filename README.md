@@ -1,5 +1,10 @@
 # Comprehensive benchmark of dimension reduction methods for single-cell data analysis
 
+Software requirements
+
+- [Nextflow](https://www.nextflow.io/)
+- Docker or Singularity
+
 The list of scATAC-seq datasets
 -------------------------------
 

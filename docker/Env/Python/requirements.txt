@@ -1,1 +1,3 @@
-snapatac2
+snapatac2==2.3.0
+glasbey
+plotnine
