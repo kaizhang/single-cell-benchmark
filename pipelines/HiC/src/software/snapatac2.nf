@@ -1,9 +1,8 @@
 nextflow.enable.dsl=2
 
 process dim_reduct {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     cpus 4
-    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad"), val(_), val(_), val(_), val(_)
     output:

@@ -1,6 +1,21 @@
 nextflow.enable.dsl=2
 
+process download_mm10 {
+    container 'kaizhang/scatac-bench:0.1.0'
+    output:
+      path("*.decomp")
+
+    """
+    #!/usr/bin/env python3
+    import snapatac2 as snap
+    import os
+    os.environ["SNAP_DATA_DIR"] = "./"
+    snap.genome.mm10.fetch_fasta()
+    """
+}
+
 process download_hg38 {
+    container 'kaizhang/scatac-bench:0.1.0'
     output:
       path("*.decomp")
 
@@ -14,6 +29,7 @@ process download_hg38 {
 }
 
 process download_hg19 {
+    container 'kaizhang/scatac-bench:0.1.0'
     output:
       path("*.decomp")
 
@@ -188,17 +204,23 @@ process data_Zhang_Cell_2021_GI {
 
 workflow download_dataset {
     main:
-        data = data_BoneMarrow_Chen_2019() | concat(
+        hg19 = data_BoneMarrow_Chen_2019() | concat(
             data_Buenrostro_2018(),
-            data_10x_Brain5k(),
+        ) | combine(download_hg19())
+
+        hg38 = data_Trevino_Cell_2021() | concat(
+            data_Zhang_Cell_2021_GI(),
             data_10x_PBMC10k(),
-            data_Chen_NBT_2019(),
             data_GSE194122(),
+        ) | combine(download_hg38())
+
+        mm10 = data_10x_Brain5k() | concat(
+            data_Chen_NBT_2019(),
             data_Ma_Cell_2020(),
-            data_Trevino_Cell_2021(),
             data_Yao_Nature_2021(),
-            data_Zhang_Cell_2021_GI()
-        )
+        ) | combine(download_mm10())
+
+        data = hg19.concat(hg38, mm10)
     emit:
         data
 }

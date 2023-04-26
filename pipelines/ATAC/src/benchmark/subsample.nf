@@ -7,9 +7,9 @@ include { dim_reduct_nystrom as snapatac2;
 include { dim_reduct_archr_subsample as archr } from '../software/archr.nf'
 
 process count_cells {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     input:
-      tuple val(type), val(name), path(h5ad)
+      tuple val(name), path(h5ad)
     output:
       tuple val(name), path(h5ad), path("n_cells.txt")
 
@@ -23,7 +23,7 @@ process count_cells {
 }
 
 process accuracy {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     input:
       tuple val(name), val(fraction), val(method), path("reduced_dim.tsv"), path("data.h5ad")
     output:

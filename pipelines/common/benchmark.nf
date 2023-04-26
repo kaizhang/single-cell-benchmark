@@ -5,12 +5,13 @@ process compute_accuracy_metrics {
     input:
       tuple val(name), val(method), path("reduced_dim.tsv"), path("data.h5ad")
     output:
-      tuple val(name), val(method), path("benchmark.txt"), path("umap.txt.gz"), path("data.h5ad")
+      tuple val(name), val(method), path("benchmark.txt"), path("umap.tsv.gz")
 
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
     from sklearn.metrics import adjusted_rand_score, silhouette_score, adjusted_mutual_info_score
+    import pandas as pd
     import numpy as np
     adata = snap.read("data.h5ad", backed=None)
     embedding = np.genfromtxt(
@@ -44,7 +45,12 @@ process compute_accuracy_metrics {
         ari = adjusted_rand_score(clusters, adata.obs["cell_annotation"])
         ami = adjusted_mutual_info_score(clusters, adata.obs["cell_annotation"])
         umap = snap.tl.umap(embedding, inplace = False)
-        np.savetxt("umap.txt.gz", umap)
+        pd.DataFrame({
+            "UMAP-1": umap[:, 0],
+            "UMAP-2": umap[:, 1],
+            "cell_annotation": adata.obs["cell_annotation"],
+            "method": '${method}',
+        }).to_csv("umap.tsv.gz", sep="\t", index=False, header=True)
         with open("benchmark.txt", "w") as f:
             ss = silhouette_score(umap, adata.obs["cell_annotation"], sample_size = 10000)
             print("\t".join([str(ari), str(ami), str(ss)]), file=f)
@@ -61,19 +67,18 @@ process output_metrics {
 
     exec:
     outputFile = task.workDir.resolve("benchmark.tsv")
-    outputFile.text = "dataset\talgorithm\tUMAP\tanndata\tARI\tAMI\tsilhouette_score\n"
+    outputFile.text = "dataset\talgorithm\tARI\tAMI\tsilhouette_score\n"
     for (x in result) {
         outputFile.append([
             x[0],
             x[1],
-            x[3],
-            x[4],
             x[2].text
         ].join('\t'))
     }
 }
 
 process plot_metrics {
+    container 'kaizhang/scatac-bench:0.1.0'
     publishDir 'result'
 
     input:
@@ -100,26 +105,30 @@ process plot_metrics {
     shapes = list(itertools.islice(itertools.cycle(shapes), n_label))
     colors = glasbey.create_palette(palette_size=n_label)
 
-    ( ggplot(data, aes(x='algorithm', y='ARI', color='factor(algorithm)'))
+    ( ggplot(data, aes(x='algorithm', y='ARI', fill='factor(algorithm)'))
         + geom_col()
-        + facet_wrap('dataset', scales="free", ncol=3)
+        + facet_wrap('dataset', scales="free_y", ncol=3)
         + scale_fill_manual(colors)
         + scale_color_manual(colors)
         + theme_light(base_size=7, base_family="Arial")
         + theme(
+            #axis_text_x=element_text(rotation=90, hjust=1),
+            axis_text_x=element_text(rotation=90),
             figure_size=(2 * 3, 2 * n),
             subplots_adjust={'hspace':0.2, 'wspace':0.2},
             legend_key=element_rect(color = "white"),
         )
     ).save(filename='ARI.pdf')
 
-    ( ggplot(data, aes(x='algorithm', y='AMI', color='factor(algorithm)'))
+    ( ggplot(data, aes(x='algorithm', y='AMI', fill='factor(algorithm)'))
         + geom_col()
-        + facet_wrap('dataset', scales="free", ncol=3)
+        + facet_wrap('dataset', scales="free_y", ncol=3)
         + scale_fill_manual(colors)
         + scale_color_manual(colors)
         + theme_light(base_size=7, base_family="Arial")
         + theme(
+            #axis_text_x=element_text(rotation=90, hjust=1),
+            axis_text_x=element_text(rotation=90),
             figure_size=(2 * 3, 2 * n),
             subplots_adjust={'hspace':0.2, 'wspace':0.2},
             legend_key=element_rect(color = "white"),
@@ -143,63 +152,54 @@ process plot_metrics {
 }
 
 process plot_umap {
-    publishDir 'result/umap'
+    publishDir 'result/UMAP'
+    container 'kaizhang/scatac-bench:0.1.0'
     input:
-        path report
+        tuple val(dataset), path(umap, stageAs: "?.tsv.gz")
     output:
         file "*.pdf"
 
     """
     #!/usr/bin/env python3
-    import seaborn as sns
+    from plotnine import *
     import pandas as pd
     import anndata as ad
-    import matplotlib.pyplot as plt
     import glasbey
     import numpy as np
-    data = pd.read_csv("${report}", sep="\t")
+
     dfs = []
-    for index, row in data.iterrows():
-        try:
-            umap = np.loadtxt(row['UMAP'])
-            annot = ad.read(row['anndata']).obs[['cell_annotation']]
-            n = umap.shape[0]
-            annot["UMAP1"] = umap[:, 0]
-            annot["UMAP2"] = umap[:, 1]
-            annot["dataset"] = row["dataset"]
-            annot["method"] = row["algorithm"]
-            dfs.append(annot)
-        except:
-            pass
+    for file in "${umap}".split():
+        df = pd.read_csv(file, sep="\t")
+        n_points = df.shape[0]
+        dfs.append(df)
     df = pd.concat(dfs, ignore_index=False)
-    size = 0.8 if n > 20000 else 2
+
     n_label = np.unique(np.array(list(map(str, df['cell_annotation'])))).size
-    for name, group in df.groupby("dataset"):
-        plot = sns.FacetGrid(
-            group,
-            col="method",
-            col_wrap=4,
-            hue="cell_annotation",
-            palette = glasbey.create_palette(palette_size=n_label),
-            sharex=False,
-            sharey=False,
+    n = -(np.unique(df['method'].to_numpy()).size // -4)
+    size = 0.1 if n_points > 20000 else 0.25
+
+    ( ggplot(df, aes(x='UMAP-1', y='UMAP-2', fill='factor(cell_annotation)'))
+        + geom_point(size=size, raster=True, stroke=0)
+        + facet_wrap('method', scales="free", ncol=4)
+        + scale_fill_manual(glasbey.create_palette(palette_size=n_label))
+        + theme_light(base_size=7)
+        + theme(
+            axis_ticks=element_blank(),
+            panel_grid_major=element_blank(),
+            panel_grid_minor=element_blank(),
+            figure_size=(1.7 * 4, 1.5 * n),
+            subplots_adjust={'hspace':0.4, 'wspace':0.2},
+            legend_key=element_rect(color = "white"),
         )
-        plot.map(
-            sns.scatterplot, "UMAP1", "UMAP2",
-            edgecolor="none", s=size, alpha=0.5,
-        )
-        plot.add_legend()
-        for lh in plot._legend.legendHandles: 
-            lh.set_alpha(1)
-            lh._sizes = [30]
-        plt.savefig(name + '.pdf')
+        + guides(fill = guide_legend(override_aes = {'size': 3}))
+    ).save("${dataset}.pdf", dpi=300)
     """
 }
 
 workflow benchmark {
     take: datasets
     main:
-        metrics = datasets | compute_accuracy_metrics | toSortedList | output_metrics
-        metrics | plot_metrics
-        metrics | plot_umap
+        metrics = datasets | compute_accuracy_metrics
+        metrics | toSortedList | output_metrics | plot_metrics
+        metrics | map {[it[0], it[3]]} | groupTuple(sort: true) | plot_umap
 }
