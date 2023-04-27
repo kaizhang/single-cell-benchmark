@@ -82,7 +82,7 @@ process subsample {
 }
 
 process prep_h5ad {
-    //container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.1.0'
     tag "$name"
     input:
       tuple val(name), path("nsrt.tsv.gz"), path("_")
@@ -100,7 +100,12 @@ process prep_h5ad {
         min_num_fragments=0,
     )
     data = snap.pp.add_tile_matrix(data, inplace=False)
-    snap.pp.select_features(data, most_variable=None)
+    snap.pp.select_features(
+        data,
+        n_features=500000000,
+        filter_lower_quantile=0,
+        filter_upper_quantile=0,
+    )
     data[:, data.var["selected"]].write("data.h5ad", compression="gzip")
     """
 }

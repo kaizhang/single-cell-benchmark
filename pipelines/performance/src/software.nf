@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 ////////////////////////////////////////////////////////////////////////////////
 
 process preproc_snapatac2 {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     tag "$name"
     cpus 4
     input:
@@ -28,7 +28,7 @@ process preproc_snapatac2 {
 }
 
 process dim_reduct_snapatac2 {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     stageInMode "copy"
     tag "$name"
     cpus 4
@@ -44,7 +44,7 @@ process dim_reduct_snapatac2 {
 }
 
 process clust_snapatac2 {
-    //container 'kaizhang/snapatac2:1.99.99.7'
+    container 'kaizhang/snapatac2:2.3.0'
     stageInMode "copy"
     tag "$name"
     cpus 4
