@@ -33,7 +33,7 @@ process dim_reduct_signac_1 {
         x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
     )
     result <- Signac:::RunTFIDF.default(data,method = 1)
-    result <- Signac:::RunSVD.default(result, n = 50)
+    result <- Signac:::RunSVD.default(result, n = 30)
 
     output <- "reduced_dim.tsv"
     i <- find_elbow(result@stdev)
@@ -74,7 +74,7 @@ process dim_reduct_signac_2 {
         x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
     )
     result <- Signac:::RunTFIDF.default(data,method = 2)
-    result <- Signac:::RunSVD.default(result, n = 50)
+    result <- Signac:::RunSVD.default(result, n = 30)
 
     output <- "reduced_dim.tsv"
     i <- find_elbow(result@stdev)
@@ -115,7 +115,7 @@ process dim_reduct_signac_3 {
         x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
     )
     result <- Signac:::RunTFIDF.default(data,method = 3)
-    result <- Signac:::RunSVD.default(result, n = 50)
+    result <- Signac:::RunSVD.default(result, n = 30)
 
     output <- "reduced_dim.tsv"
     i <- find_elbow(result@stdev)
@@ -156,7 +156,7 @@ process dim_reduct_signac_4 {
         x = c(x\$data), index1=F, repr = "C", dims=rev(H5Aread(H5Aopen(x, "shape")))
     )
     result <- Signac:::RunTFIDF.default(data,method = 4)
-    result <- Signac:::RunSVD.default(result, n = 50)
+    result <- Signac:::RunSVD.default(result, n = 30)
     output <- "reduced_dim.tsv"
     i <- find_elbow(result@stdev)
     write.table(result@cell.embeddings[, 1:i], file=output, row.names=F, col.names=F, sep="\t")
