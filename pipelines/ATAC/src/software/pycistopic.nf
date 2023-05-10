@@ -2,6 +2,7 @@ nextflow.enable.dsl=2
 
 process dim_reduct_pycistopic {
     container 'kaizhang/pycistopic:latest'
+    tag "$name"
     cpus 8
     errorStrategy 'ignore'
 

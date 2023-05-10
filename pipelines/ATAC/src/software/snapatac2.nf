@@ -2,7 +2,9 @@ nextflow.enable.dsl=2
 
 process dim_reduct_jaccard {
     container 'kaizhang/snapatac2:2.3.0'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad")
     output:
@@ -20,7 +22,9 @@ process dim_reduct_jaccard {
 
 process dim_reduct_cosine {
     container 'kaizhang/snapatac2:2.3.0'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad")
     output:
@@ -39,7 +43,9 @@ process dim_reduct_cosine {
 
 process dim_reduct_svd {
     container 'kaizhang/snapatac2:2.3.0'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad")
     output:
@@ -71,7 +77,9 @@ process dim_reduct_svd {
 
 
 process dim_reduct_nystrom {
-    container 'kaizhang/snapatac2:2.3.0'
+    //container 'kaizhang/snapatac2:2.3.0'
+    tag "$name"
+    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad"), val(fraction)
     output:
@@ -80,7 +88,7 @@ process dim_reduct_nystrom {
     #!/usr/bin/env python3
     import snapatac2 as snap
     import numpy as np
-    seed = 1
+    seed = 2
     adata = snap.read("data.h5ad", backed='r')
     result = snap.tl.spectral(adata, features=None, chunk_size=500,
         distance_metric="cosine",
@@ -92,7 +100,9 @@ process dim_reduct_nystrom {
 }
 
 process dim_reduct_nystrom2 {
-    container 'kaizhang/snapatac2:2.3.0'
+    //container 'kaizhang/snapatac2:2.3.0'
+    tag "$name"
+    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad"), val(fraction)
     output:
@@ -115,6 +125,7 @@ process dim_reduct_nystrom2 {
 
 process end_to_end_snapatac_2 {
     container 'kaizhang/snapatac2:2.3.0'
+    errorStrategy 'ignore'
     input:
       val(data)
     output:
@@ -159,6 +170,7 @@ process end_to_end_snapatac_2 {
 
 process end_to_end_snapatac_2_cosine {
     container 'kaizhang/snapatac2:2.3.0'
+    errorStrategy 'ignore'
     input:
       val(data)
     output:

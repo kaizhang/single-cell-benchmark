@@ -130,8 +130,8 @@ process data_GSE194122 {
     #!/usr/bin/env python
     import pooch
     pooch.retrieve(
-        "https://osf.io/download/dqytr/",
-        "sha256:c56b23d3c3dcd93e6df007ebc6d44adcb894f7ddc413a79b9c1a92b88d70198f",
+        "https://osf.io/download/dk5zf/",
+        "sha256:ee235d584390e65a5f4484020e544d5bae0d1634257ec9f49db8a2cb025c9e4d",
         fname="matrix.h5ad",
         path="./",
     )
@@ -186,6 +186,38 @@ process data_Yao_Nature_2021 {
     """
 }
 
+process data_Zemke_2023_human {
+    container 'kaizhang/scatac-bench:0.1.0'
+    output:
+      tuple val("Zemke_2023_human"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/qpx2f/",
+        "sha256:f6f3914b22c5f76785c4cac6e491f1a3dda208814769092c33be8d99c98e3454",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
+process data_Zemke_2023_mouse {
+    container 'kaizhang/scatac-bench:0.1.0'
+    output:
+      tuple val("Zemke_2023_mouse"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/3pexa/",
+        "sha256:38e2b2daee63dfe318ff49a63480e78cf5e37a54ee62b6ef47be42a92221ef99",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
 process data_Zhang_Cell_2021_GI {
     container 'kaizhang/scatac-bench:0.1.0'
     output:
@@ -209,15 +241,17 @@ workflow download_dataset {
         ) | combine(download_hg19())
 
         hg38 = data_Trevino_Cell_2021() | concat(
-            data_Zhang_Cell_2021_GI(),
+            //data_Zhang_Cell_2021_GI(),
             data_10x_PBMC10k(),
             data_GSE194122(),
+            data_Zemke_2023_human(),
         ) | combine(download_hg38())
 
         mm10 = data_10x_Brain5k() | concat(
             data_Chen_NBT_2019(),
             data_Ma_Cell_2020(),
             data_Yao_Nature_2021(),
+            data_Zemke_2023_mouse(),
         ) | combine(download_mm10())
 
         data = hg19.concat(hg38, mm10)

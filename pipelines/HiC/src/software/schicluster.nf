@@ -2,6 +2,7 @@ nextflow.enable.dsl=2
 
 process dim_reduct_schicluster {
     container 'kaizhang/schicluster:1.3.2'
+    tag "$name"
     cpus 8
 
     input:
@@ -20,7 +21,9 @@ process dim_reduct_schicluster {
     import numpy as np
 
     with open('config.JSON', 'r') as file:
-        resolution = str(json.load(file)['resolution'])
+        config = json.load(file)
+        resolution = str(config['resolution'])
+        chromosomes = config['chrom_list']
 
     def split_cells(input, out_dir):
         cell_list = []
@@ -72,7 +75,7 @@ process dim_reduct_schicluster {
     def impute_matrix(dir, cells, chromosome, out_dir):
         input = dir + '/' + chromosome + '/'
         out = out_dir + '/' + chromosome + '/'
-        if bool(os.listdir(input)):
+        if len(os.listdir(input)) > 30:
             os.makedirs(out, exist_ok=True)
             for cell in cells:
                 file = input + cell + '_' + chromosome + '.txt'
@@ -93,13 +96,6 @@ process dim_reduct_schicluster {
                 "--res", resolution,
                 "--dim", "30",
             ], check = True)
-
-    # get a list of chromosomes
-    chromosomes = []
-    with open("chrom.sizes", 'r') as fl:
-        for line in fl:
-            items = line.strip().split()
-            chromosomes.append(items[0])
 
     with tempfile.TemporaryDirectory(dir='./') as temp_dir:
         contact_map_dir = temp_dir + "/contact_map/"

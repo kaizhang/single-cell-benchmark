@@ -1,1 +1,1 @@
-nextflow run src/main.nf -resume $@
+nextflow run src/main.nf -with-trace -with-report -resume $@

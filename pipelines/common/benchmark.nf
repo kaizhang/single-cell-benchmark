@@ -135,7 +135,7 @@ process plot_metrics {
         )
     ).save(filename='AMI.pdf')
 
-    ( ggplot(data, aes(x='silhouette_score', y='ARI', color='factor(algorithm)'))
+    ( ggplot(data, aes(x='AMI', y='ARI', color='factor(algorithm)'))
         + geom_point(aes(shape='factor(algorithm)'))
         + facet_wrap('dataset', scales="free", ncol=3)
         + scale_fill_manual(colors)
@@ -147,7 +147,7 @@ process plot_metrics {
             subplots_adjust={'hspace':0.2, 'wspace':0.2},
             legend_key=element_rect(color = "white"),
         )
-    ).save(filename='ARI_Silhouette.pdf')
+    ).save(filename='ARI_vs_AMI.pdf')
     """
 }
 

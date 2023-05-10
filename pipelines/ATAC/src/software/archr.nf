@@ -2,7 +2,9 @@ nextflow.enable.dsl=2
 
 process dim_reduct_archr_1 {
     container 'kaizhang/archr:1.0.1'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad")
@@ -36,7 +38,9 @@ process dim_reduct_archr_1 {
 
 process dim_reduct_archr_2 {
     container 'kaizhang/archr:1.0.1'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad")
@@ -69,7 +73,9 @@ process dim_reduct_archr_2 {
 
 process dim_reduct_archr_3 {
     container 'kaizhang/archr:1.0.1'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad")
@@ -102,6 +108,8 @@ process dim_reduct_archr_3 {
 
 process dim_reduct_archr_subsample {
     container 'kaizhang/archr:1.0.1'
+    tag "$name"
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad"), val(fraction)

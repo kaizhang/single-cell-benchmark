@@ -46,11 +46,13 @@ workflow bench_dim_reduct {
             archr_2(datasets_),
             archr_3(datasets_),
 
-            peakvi(datasets_),
-            scale(datasets_),
-            scBasset(datasets),
-
             cisTopic(datasets_),
+
+            peakvi(datasets_),
+
+            scale(datasets_),
+
+            scBasset(datasets),
         )
             | combine(datasets_, by: 0)
             | benchmark

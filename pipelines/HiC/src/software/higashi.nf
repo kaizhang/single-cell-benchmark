@@ -2,6 +2,7 @@ nextflow.enable.dsl=2
 
 process dim_reduct_higashi {
     container 'kaizhang/higashi:latest'
+    tag "$name"
     errorStrategy 'ignore'
     containerOptions '--nv'
     label "gpu"

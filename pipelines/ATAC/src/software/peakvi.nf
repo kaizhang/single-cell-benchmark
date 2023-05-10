@@ -2,6 +2,7 @@ nextflow.enable.dsl=2
 
 process dim_reduct_peakvi {
     container 'kaizhang/scvi-tools:0.19.0'
+    tag "$name"
     errorStrategy 'ignore'
     containerOptions '--nv'
     label "gpu"

@@ -2,7 +2,9 @@ nextflow.enable.dsl=2
 
 process dim_reduct_episcanpy {
     container 'kaizhang/episcanpy:0.4.0'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
     input:
       tuple val(name), path("data.h5ad")
     output:

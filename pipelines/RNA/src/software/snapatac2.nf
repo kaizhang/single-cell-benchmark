@@ -2,6 +2,7 @@ nextflow.enable.dsl=2
 
 process dim_reduct {
     container 'kaizhang/snapatac2:2.3.0'
+    tag "$name"
     cpus 4
     input:
       tuple val(name), path("data.h5ad")
@@ -27,6 +28,7 @@ process dim_reduct {
 
 process dim_reduct_svd {
     container 'kaizhang/snapatac2:2.3.0'
+    tag "$name"
     cpus 4
     input:
       tuple val(name), path("data.h5ad")

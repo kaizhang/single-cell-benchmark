@@ -2,8 +2,10 @@ nextflow.enable.dsl=2
 
 process dim_reduct_snapatac {
     container 'kaizhang/snapatac:1.0'
+    tag "$name"
     cpus 4
     memory '100G'
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad")
@@ -64,6 +66,7 @@ process dim_reduct_snapatac {
 
 process dim_reduct_snapatac_nystrom {
     container 'kaizhang/snapatac:1.0'
+    errorStrategy 'ignore'
 
     input:
       val(data)

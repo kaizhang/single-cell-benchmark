@@ -2,7 +2,9 @@ nextflow.enable.dsl=2
 
 process dim_reduct_signac_1 {
     container 'kaizhang/signac:1.6'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad")
@@ -43,7 +45,9 @@ process dim_reduct_signac_1 {
 
 process dim_reduct_signac_2 {
     container 'kaizhang/signac:1.6'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad")
@@ -84,7 +88,9 @@ process dim_reduct_signac_2 {
 
 process dim_reduct_signac_3 {
     container 'kaizhang/signac:1.6'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad")
@@ -125,7 +131,9 @@ process dim_reduct_signac_3 {
 
 process dim_reduct_signac_4 {
     container 'kaizhang/signac:1.6'
+    tag "$name"
     cpus 4
+    errorStrategy 'ignore'
 
     input:
       tuple val(name), path("data.h5ad")
@@ -165,6 +173,7 @@ process dim_reduct_signac_4 {
 
 process end_to_end_signac {
     container 'kaizhang/signac:1.6'
+    errorStrategy 'ignore'
 
     input:
       val(data)
