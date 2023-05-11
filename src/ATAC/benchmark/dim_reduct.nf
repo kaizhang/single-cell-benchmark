@@ -1,5 +1,7 @@
 nextflow.enable.dsl=2
 
+params.outdir = "results"
+
 include { download_hg38; download_hg19; } from '../dataset.nf'
 
 include { dim_reduct_snapatac as snapatac; } from '../software/snapatac.nf'
@@ -22,7 +24,8 @@ include { dim_reduct_pycistopic as cisTopic } from '../software/pycistopic.nf'
 include { dim_reduct_scbasset as scBasset } from '../software/scbasset.nf'
 include { dim_reduct_episcanpy as epiScanpy } from '../software/episcanpy.nf'
 
-include { benchmark } from '../../../common/benchmark.nf'
+include { bench_embedding
+        } from '../../common/benchmark.nf' params(resultDir: "${params.outdir}/ATAC/dim_reduct")
 
 workflow bench_dim_reduct {
     take: datasets
@@ -55,5 +58,5 @@ workflow bench_dim_reduct {
             scBasset(datasets),
         )
             | combine(datasets_, by: 0)
-            | benchmark
+            | bench_embedding
 }
