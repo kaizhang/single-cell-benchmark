@@ -29,3 +29,5 @@ How to run benchmark
 --------------------
 
 Use `./bench.sh` within each subdirectory to run benchmark. The benchmark results will be stored in `./results` folder.
+
+You can choose to run specific benchmark by specifying the benchmark name. For example, `./bench.sh -entry ATAC` will run ATAC benchmark only.
