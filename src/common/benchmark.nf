@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 params.resultDir = 'results'
 
 process eval_embedding {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     input:
       tuple val(name), val(method), path("reduced_dim.tsv"), path("data.h5ad")
     output:
@@ -60,7 +60,7 @@ process eval_embedding {
 }
 
 process eval_cluster {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     input:
       tuple val(name), val(method), path("clusters.tsv"), path("data.h5ad")
     output:
@@ -104,7 +104,7 @@ process output_metrics {
 
 process plot_metrics {
     publishDir "${params.resultDir}/plots", mode: 'copy'
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
 
     input:
         path "benchmark.tsv"
@@ -178,7 +178,7 @@ process plot_metrics {
 
 process plot_umap {
     publishDir "${params.resultDir}/plots", mode: 'copy'
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     input:
         tuple val(dataset), path(umap, stageAs: "?.tsv.gz")
     output:

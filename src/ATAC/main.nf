@@ -11,8 +11,8 @@ include { bench_leiden } from './benchmark/leiden.nf'
 workflow bench_ATAC {
     datasets = download_dataset()
 
-    //bench_dim_reduct(datasets)
-    //bench_subsample(datasets | map { [it[0], it[1]] })
-    //bench_clustering(datasets)
+    bench_dim_reduct(datasets)
+    bench_subsample(datasets | map { [it[0], it[1]] })
+    bench_clustering(datasets)
     bench_leiden(datasets)
 }

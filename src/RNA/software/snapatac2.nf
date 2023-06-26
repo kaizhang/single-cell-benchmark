@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process dim_reduct {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     tag "$name"
     cpus 4
     input:
@@ -27,7 +27,7 @@ process dim_reduct {
 }
 
 process dim_reduct_svd {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     tag "$name"
     cpus 4
     input:

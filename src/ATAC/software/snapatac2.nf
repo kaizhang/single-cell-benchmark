@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process dim_reduct_jaccard {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     tag "$name"
     cpus 4
     errorStrategy 'ignore'
@@ -21,7 +21,7 @@ process dim_reduct_jaccard {
 }
 
 process dim_reduct_cosine {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     tag "$name"
     cpus 4
     errorStrategy 'ignore'
@@ -42,7 +42,7 @@ process dim_reduct_cosine {
 }
 
 process dim_reduct_svd {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     tag "$name"
     cpus 4
     errorStrategy 'ignore'
@@ -77,7 +77,7 @@ process dim_reduct_svd {
 
 
 process dim_reduct_nystrom {
-    //container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     tag "$name"
     errorStrategy 'ignore'
     input:
@@ -100,7 +100,7 @@ process dim_reduct_nystrom {
 }
 
 process dim_reduct_nystrom2 {
-    //container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     tag "$name"
     errorStrategy 'ignore'
     input:
@@ -124,7 +124,7 @@ process dim_reduct_nystrom2 {
 }
 
 process end_to_end_snapatac_2 {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     errorStrategy 'ignore'
     input:
       val(data)
@@ -169,7 +169,7 @@ process end_to_end_snapatac_2 {
 }
 
 process end_to_end_snapatac_2_cosine {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     errorStrategy 'ignore'
     input:
       val(data)

@@ -10,7 +10,7 @@ include { knn_leiden_exact;
         } from '../../common/algorithms/clustering.nf'
 
 process leiden {
-    //container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     input:
       tuple val(name), val(method), path("reduced_dim.tsv"), path('data.h5ad')
     output:
@@ -63,6 +63,7 @@ process leiden {
 
 process report {
     publishDir "${params.outdir}/ATAC/leiden", mode: 'copy'
+    container 'kaizhang/scatac-bench:0.2.0'
     input:
       path(files, stageAs: '?.tsv.gz') 
     output:
@@ -81,7 +82,7 @@ process report {
 
 process plot {
     publishDir "${params.outdir}/ATAC/leiden", mode: 'copy'
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
 
     input:
         path "benchmark.tsv"

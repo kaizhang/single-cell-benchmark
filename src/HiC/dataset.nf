@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process data_Lee {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Lee"), path("Lee.h5ad"), path("Lee.txt"), path("Lee.JSON"), path("Lee.chrom.sizes"), path("label_info.pickle")
     """
@@ -42,7 +42,7 @@ process data_Lee {
 }
 
 process data_4dn_kim {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("4DN_Kim"), path("4DN_data.h5ad"), path("4DN_data.txt"), path("4DN_config.JSON"), path("4DN_hg19.chrom.sizes"), path("label_info.pickle")
     """

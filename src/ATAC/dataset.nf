@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process download_mm10 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       path("*.decomp")
 
@@ -15,7 +15,7 @@ process download_mm10 {
 }
 
 process download_hg38 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       path("*.decomp")
 
@@ -29,7 +29,7 @@ process download_hg38 {
 }
 
 process download_hg19 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       path("*.decomp")
 
@@ -43,7 +43,7 @@ process download_hg19 {
 }
 
 process data_BoneMarrow_Chen_2019 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("BoneMarrow_Chen_2019"), path("matrix.h5ad")
     """
@@ -59,7 +59,7 @@ process data_BoneMarrow_Chen_2019 {
 }
 
 process data_Buenrostro_2018 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Buenrostro_2018"), path("matrix.h5ad")
     """
@@ -75,7 +75,7 @@ process data_Buenrostro_2018 {
 }
 
 process data_10x_Brain5k {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("10x_Brain5k"), path("matrix.h5ad")
     """
@@ -91,7 +91,7 @@ process data_10x_Brain5k {
 }
 
 process data_10x_PBMC10k {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("10x_PBMC10k"), path("matrix.h5ad")
     """
@@ -107,7 +107,7 @@ process data_10x_PBMC10k {
 }
 
 process data_Chen_NBT_2019 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Chen_NBT_2019"), path("matrix.h5ad")
     """
@@ -123,7 +123,7 @@ process data_Chen_NBT_2019 {
 }
 
 process data_GSE194122 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("GSE194122"), path("matrix.h5ad")
     """
@@ -139,7 +139,7 @@ process data_GSE194122 {
 }
 
 process data_Ma_Cell_2020 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Ma_Cell_2020"), path("matrix.h5ad")
     """
@@ -155,7 +155,7 @@ process data_Ma_Cell_2020 {
 }
 
 process data_Trevino_Cell_2021 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Trevino_Cell_2021"), path("matrix.h5ad")
     """
@@ -171,7 +171,7 @@ process data_Trevino_Cell_2021 {
 }
 
 process data_Yao_Nature_2021 {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Yao_Nature_2021"), path("matrix.h5ad")
     """
@@ -187,7 +187,7 @@ process data_Yao_Nature_2021 {
 }
 
 process data_Zemke_2023_human {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Zemke_2023_human"), path("matrix.h5ad")
     """
@@ -203,7 +203,7 @@ process data_Zemke_2023_human {
 }
 
 process data_Zemke_2023_mouse {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Zemke_2023_mouse"), path("matrix.h5ad")
     """
@@ -219,7 +219,7 @@ process data_Zemke_2023_mouse {
 }
 
 process data_Zhang_Cell_2021_GI {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Zhang_Cell_2021"), path("matrix.h5ad")
     """

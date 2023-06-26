@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process data_Koh { 
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Koh"), path("Koh.h5ad")
     """
@@ -17,7 +17,7 @@ process data_Koh {
 }
 
 process data_Kumar { 
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Kumar"), path("Kumar.h5ad")
     """
@@ -33,7 +33,7 @@ process data_Kumar {
 }
 
 process data_Zhengmix4eq {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Zhengmix4eq"), path("Zhengmix4eq.h5ad")
     """
@@ -49,7 +49,7 @@ process data_Zhengmix4eq {
 }
 
 process data_Zhengmix4uneq {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Zhengmix4uneq"), path("Zhengmix4uneq.h5ad")
     """
@@ -65,7 +65,7 @@ process data_Zhengmix4uneq {
 }
 
 process data_Zhengmix8eq {
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     output:
       tuple val("Zhengmix8eq"), path("Zhengmix8eq.h5ad")
     """

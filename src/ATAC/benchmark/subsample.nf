@@ -10,7 +10,7 @@ include { dim_reduct_archr_subsample as archr_subsample;
         } from '../software/archr.nf'
 
 process count_cells {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     input:
       tuple val(name), path(h5ad)
     output:
@@ -26,7 +26,7 @@ process count_cells {
 }
 
 process clustering {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     input:
       tuple val(name), val(method), path("reduced_dim.tsv"), path("data.h5ad")
     output:
@@ -65,7 +65,7 @@ process clustering {
 
 
 process accuracy {
-    container 'kaizhang/snapatac2:2.3.0'
+    container 'kaizhang/snapatac2:2.3.1'
     input:
       tuple val(name), val(_), val(fraction), val(method), path("reduced_dim.tsv"), path("clusters.txt")
     output:
@@ -135,7 +135,7 @@ process report {
 
 process plot {
     publishDir 'result'
-    container 'kaizhang/scatac-bench:0.1.0'
+    container 'kaizhang/scatac-bench:0.2.0'
     input:
         path "benchmark.tsv"
     output:
