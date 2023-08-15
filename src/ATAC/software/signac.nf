@@ -1,15 +1,19 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_signac_1 {
     container 'kaizhang/signac:1.6'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
 
+    when: is_included("signac", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('Signac (log(TF-IDF))'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'Signac (log(TF-IDF))')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript
@@ -45,14 +49,16 @@ process dim_reduct_signac_1 {
 
 process dim_reduct_signac_2 {
     container 'kaizhang/signac:1.6'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
 
+    when: is_included("signac", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('Signac (TF-logIDF)'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'Signac (TF-logIDF)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript
@@ -88,14 +94,16 @@ process dim_reduct_signac_2 {
 
 process dim_reduct_signac_3 {
     container 'kaizhang/signac:1.6'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
 
+    when: is_included("signac", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('Signac (logTF-logIDF)'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'Signac (logTF-logIDF)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript
@@ -131,14 +139,16 @@ process dim_reduct_signac_3 {
 
 process dim_reduct_signac_4 {
     container 'kaizhang/signac:1.6'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
 
+    when: is_included("signac", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('Signac (IDF)'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'Signac (IDF)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript

@@ -8,7 +8,7 @@ process dim_reduct_jaccard {
     cpus 4
     errorStrategy 'ignore'
 
-    when: is_included("snapatac2 (jaccard)", params.method_include, params.method_exclude)
+    when: is_included("snapatac2", params.method_include, params.method_exclude)
 
     input:
       tuple val(metadata), path("data.h5ad")
@@ -55,7 +55,7 @@ process dim_reduct_svd {
     cpus 4
     errorStrategy 'ignore'
 
-    when: is_included("snapatac2 (svd)", params.method_include, params.method_exclude)
+    when: is_included("snapatac2", params.method_include, params.method_exclude)
     
     input:
       tuple val(metadata), path("data.h5ad")

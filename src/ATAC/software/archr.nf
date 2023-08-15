@@ -1,15 +1,19 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_archr_1 {
     container 'kaizhang/archr:1.0.1'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
 
+    when: is_included("archr", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('ArchR (TF-logIDF)'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'ArchR (TF-logIDF)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript
@@ -38,14 +42,16 @@ process dim_reduct_archr_1 {
 
 process dim_reduct_archr_2 {
     container 'kaizhang/archr:1.0.1'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
 
+    when: is_included("archr", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('ArchR (log(TF-IDF))'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'ArchR (log(TF-IDF))')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript
@@ -73,14 +79,16 @@ process dim_reduct_archr_2 {
 
 process dim_reduct_archr_3 {
     container 'kaizhang/archr:1.0.1'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
 
+    when: is_included("archr", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('ArchR (logTF-logIDF)'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'ArchR (logTF-logIDF)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript

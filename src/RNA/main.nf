@@ -12,7 +12,7 @@ include { dim_reduct as snapatac2
 include { bench_embedding
         } from '../common/benchmark.nf' params(resultDir: "${params.outdir}/RNA")
 
-include { json } from '../common/utils.gvy'
+include { json; genBenchId } from '../common/utils.gvy'
 
 workflow bench_rna {
     take: metadata
@@ -34,6 +34,6 @@ workflow bench_rna {
                 data_full | map({ [json(it[0]).data_name, it[1]] }),
                 by: 0
             )
-            | map ({ [it[1][0], it[1][1], it[2]] })
+            | map ({ [genBenchId(it[1][0]), it[1][1], it[2]] })
             | bench_embedding
 }

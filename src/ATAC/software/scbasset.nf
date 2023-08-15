@@ -1,16 +1,20 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_scbasset {
     container 'kaizhang/scbasset:latest'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     errorStrategy 'ignore'
     containerOptions '--nv'
     label "gpu"
 
+    when: is_included("scbasset", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad"), path("fasta.fa")
+      tuple val(metadata), path("data.h5ad"), path("fasta.fa")
     output:
-      tuple val(name), val('scBasset'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'scBasset')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3

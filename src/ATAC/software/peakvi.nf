@@ -1,16 +1,20 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_peakvi {
     container 'kaizhang/scvi-tools:0.19.0'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     errorStrategy 'ignore'
     containerOptions '--nv'
     label "gpu"
 
+    when: is_included("peakvi", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('PeakVI'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'PeakVI')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3

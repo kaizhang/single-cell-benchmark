@@ -1,15 +1,19 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_pycistopic {
     container 'kaizhang/pycistopic:latest'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 8
     errorStrategy 'ignore'
 
+    when: is_included("cistopic", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('cisTopic'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'cisTopic')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3

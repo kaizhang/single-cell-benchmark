@@ -1,16 +1,20 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_scale {
     container 'kaizhang/scale:1.1.2'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     errorStrategy 'ignore'
     containerOptions '--nv'
     cpus 16
 
+    when: is_included("scale", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val('SCALE'), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'SCALE')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3

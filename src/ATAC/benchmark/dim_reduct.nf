@@ -28,11 +28,65 @@ include { bench_embedding
         } from '../../common/benchmark.nf' params(resultDir: "${params.outdir}/ATAC/dim_reduct")
 include { json; genBenchId } from '../../common/utils.gvy'
 
+process download_genome {
+    container 'kaizhang/scatac-bench:0.2.0'
+    input:
+      val(genome)
+
+    output:
+      tuple val(genome), path("*.decomp")
+
+    """
+    #!/usr/bin/env python3
+    import snapatac2 as snap
+    import os
+    os.environ["SNAP_DATA_DIR"] = "./"
+
+    if "${genome}" == "mm10":
+        snap.genome.mm10.fetch_fasta()
+    elif "${genome}" == "hg38":
+        snap.genome.hg38.fetch_fasta()
+    elif "${genome}" == "hg19":
+        snap.genome.hg19.fetch_fasta()
+    else:
+        raise ValueError("Unknown genome: ${genome}")
+    """
+}
+
 workflow bench_dim_reduct {
     take: datasets
     main:
+        genomes = Channel.of("mm10", "hg38", "hg19") | download_genome
+
         embedding = snapatac2_cosine(datasets) | concat(
+            snapatac2_jaccard(datasets),
+            snapatac2_svd(datasets),
+
+            snapatac(datasets),
+
             epiScanpy(datasets),
+
+            signac_1(datasets),
+            signac_2(datasets),
+            signac_3(datasets),
+            signac_4(datasets),
+
+            archr_1(datasets),
+            archr_2(datasets),
+            archr_3(datasets),
+
+            cisTopic(datasets),
+
+            scale(datasets),
+
+            peakvi(datasets),
+
+            scBasset(
+                datasets
+                    | map ({ [json(it[0]).genome, it[0], it[1]] })
+                    | combine(genomes, by: 0)
+                    | map({ [it[1], it[2], it[3]] })
+            )
         )
 
         embedding
@@ -43,33 +97,4 @@ workflow bench_dim_reduct {
             )
             | map ({ [genBenchId(it[1][0]), it[1][1], it[2]] })
             | bench_embedding
-
-/*
-        snapatac2_jaccard(datasets_) | concat(
-            snapatac2_cosine(datasets_),
-            snapatac2_svd(datasets_),
-
-            snapatac(datasets_),
-
-
-            signac_1(datasets_),
-            signac_2(datasets_),
-            signac_3(datasets_),
-            signac_4(datasets_),
-
-            archr_1(datasets_),
-            archr_2(datasets_),
-            archr_3(datasets_),
-
-            cisTopic(datasets_),
-
-            peakvi(datasets_),
-
-            scale(datasets_),
-
-            scBasset(datasets),
-        )
-            | combine(datasets_, by: 0)
-            | bench_embedding
-            */
 }
