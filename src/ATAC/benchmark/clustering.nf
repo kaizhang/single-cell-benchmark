@@ -27,3 +27,19 @@ workflow bench_clustering {
             | combine(data, by: 0)
             | bench
 }
+
+// Simulated datasets with different sequencing depth and noise level.
+workflow bench_clustering_coverage {
+    take: datasets
+    main:
+        data = datasets | map { [it[0], it[1]] }
+        embeddings = snapatac2(data) | combine(data, by: 0)
+
+        knn_leiden_exact(embeddings) | concat(
+            knn_leiden_hora(embeddings),
+            knn_leiden_exact_weighted(embeddings),
+            kmeans(embeddings),
+        )
+            | combine(data, by: 0)
+            | bench
+}

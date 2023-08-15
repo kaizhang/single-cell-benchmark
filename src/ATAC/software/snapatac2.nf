@@ -1,14 +1,19 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_jaccard {
     container 'kaizhang/snapatac2:2.3.1'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
+
+    when: is_included("snapatac2 (jaccard)", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val("SnapATAC2 (jaccard)"), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'SnapATAC2 (jaccard)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3
@@ -22,19 +27,22 @@ process dim_reduct_jaccard {
 
 process dim_reduct_cosine {
     container 'kaizhang/snapatac2:2.3.1'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
+
+    when: is_included("snapatac2", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val("SnapATAC2 (cosine)"), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'SnapATAC2')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3
     import snapatac2 as snap
     import numpy as np
-    seed = 1
+    import json
     adata = snap.read("data.h5ad", backed=None)
     _, evecs = snap.tl.spectral(adata, features=None, inplace=False, distance_metric="cosine")
     np.savetxt("reduced_dim.tsv", evecs, delimiter="\t")
@@ -43,13 +51,16 @@ process dim_reduct_cosine {
 
 process dim_reduct_svd {
     container 'kaizhang/snapatac2:2.3.1'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
+
+    when: is_included("snapatac2 (svd)", params.method_include, params.method_exclude)
+    
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val("SnapATAC2 (svd)"), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'SnapATAC2 (svd)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3

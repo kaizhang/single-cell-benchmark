@@ -58,6 +58,134 @@ process data_BoneMarrow_Chen_2019 {
     """
 }
 
+process data_BoneMarrow_Chen_2019_clean {
+    container 'kaizhang/scatac-bench:0.2.0'
+    output:
+      tuple val("BoneMarrow_Chen_2019_clean"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/a5nh7/",
+        "sha256:aefb5b88798757057dd55ff89f2c580cb67b16ef4b12c091aea6373da717d6d6",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
+process data_BoneMarrow_Chen_2019_cov250 {
+    container 'kaizhang/scatac-bench:0.2.0'
+    output:
+      tuple val("BoneMarrow_Chen_2019_cov250"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/6yms7/",
+        "sha256:8125ecf60a6c2e3f69f8c0d3434aacd8f8cd4e5c33d9e49a3156895c06c5712f",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
+process data_BoneMarrow_Chen_2019_cov500 {
+    container 'kaizhang/scatac-bench:0.2.0'
+    output:
+      tuple val("BoneMarrow_Chen_2019_cov500"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/n7djf/",
+        "sha256:1ba87eca49b87c032aae85c0fa7e6800d64268694abea075773ebd5623f9ca35",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
+process data_BoneMarrow_Chen_2019_cov1000 {
+    container 'kaizhang/scatac-bench:0.2.0'
+    output:
+      tuple val("BoneMarrow_Chen_2019_cov1000"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/367pn/",
+        "sha256:871d837c0405e46d31e6821e5a55c8dd508de246d5f5d81ef6a652159c1300d4",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
+process data_BoneMarrow_Chen_2019_cov2500 {
+    container 'kaizhang/scatac-bench:0.2.0'
+    output:
+      tuple val("BoneMarrow_Chen_2019_cov2500"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/28wby/",
+        "sha256:d872f0a161fd838e9d1bb4c2830e8741e229da0a6b39820b53b73c254ab17d1d",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
+process data_BoneMarrow_Chen_2019_cov5000 {
+    container 'kaizhang/scatac-bench:0.2.0'
+    output:
+      tuple val("BoneMarrow_Chen_2019_cov5000"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/dkzp9/",
+        "sha256:3a631d0bea8d683c0ecbeede3028a6628c112d9904a3f42fb27daf7dca317dae",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
+process data_BoneMarrow_Chen_2019_noise_p2 {
+    container 'kaizhang/scatac-bench:0.2.0'
+    output:
+      tuple val("BoneMarrow_Chen_2019_noise_p2"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/xtwh9/",
+        "sha256:99769f835a4eb1daa1140b246079b5b53e7b507dc7f8f9796b2b820e6b21b852",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
+process data_BoneMarrow_Chen_2019_noise_p4 {
+    container 'kaizhang/scatac-bench:0.2.0'
+    output:
+      tuple val("BoneMarrow_Chen_2019_noise_p4"), path("matrix.h5ad")
+    """
+    #!/usr/bin/env python
+    import pooch
+    pooch.retrieve(
+        "https://osf.io/download/5g9jk/",
+        "sha256:5aac8d5b6c730d18ced677bc8773e10c9cbb36b5eab888bb93b980d122d7ae73",
+        fname="matrix.h5ad",
+        path="./",
+    )
+    """
+}
+
 process data_Buenrostro_2018 {
     container 'kaizhang/scatac-bench:0.2.0'
     output:
@@ -255,6 +383,21 @@ workflow download_dataset {
         ) | combine(download_mm10())
 
         data = hg19.concat(hg38, mm10)
+    emit:
+        data
+}
+
+workflow download_simulated_dataset {
+    main:
+        data = data_BoneMarrow_Chen_2019_clean() | concat(
+            data_BoneMarrow_Chen_2019_cov250(),
+            data_BoneMarrow_Chen_2019_cov500(),
+            data_BoneMarrow_Chen_2019_cov1000(),
+            data_BoneMarrow_Chen_2019_cov2500(),
+            data_BoneMarrow_Chen_2019_cov5000(),
+            data_BoneMarrow_Chen_2019_noise_p2(),
+            data_BoneMarrow_Chen_2019_noise_p4(),
+        ) | combine(download_hg19())
     emit:
         data
 }

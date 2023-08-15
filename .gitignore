@@ -4,5 +4,8 @@
 work*
 dataset
 result
+results
 target
 .nv
+*.pdf
+*.html

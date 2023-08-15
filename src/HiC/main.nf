@@ -8,7 +8,7 @@ include { dim_reduct_schicluster as schicluster } from './software/schicluster.n
 include { bench_embedding
         } from '../common/benchmark.nf' params(resultDir: "${params.outdir}/HiC")
 
-workflow bench_HiC {
+workflow bench_hic {
     data = download_dataset()
     reports = snapatac2(data)
         | concat(

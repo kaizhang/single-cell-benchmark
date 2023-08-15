@@ -26,19 +26,31 @@ include { dim_reduct_episcanpy as epiScanpy } from '../software/episcanpy.nf'
 
 include { bench_embedding
         } from '../../common/benchmark.nf' params(resultDir: "${params.outdir}/ATAC/dim_reduct")
+include { json; genBenchId } from '../../common/utils.gvy'
 
 workflow bench_dim_reduct {
     take: datasets
     main:
-        datasets_ = datasets | map {[it[0], it[1]]}
+        embedding = snapatac2_cosine(datasets) | concat(
+            epiScanpy(datasets),
+        )
 
+        embedding
+            | map({ [json(it[0]).data_name, it] })
+            | combine(
+                datasets | map({ [json(it[0]).data_name, it[1]] }),
+                by: 0
+            )
+            | map ({ [genBenchId(it[1][0]), it[1][1], it[2]] })
+            | bench_embedding
+
+/*
         snapatac2_jaccard(datasets_) | concat(
             snapatac2_cosine(datasets_),
             snapatac2_svd(datasets_),
 
             snapatac(datasets_),
 
-            epiScanpy(datasets_),
 
             signac_1(datasets_),
             signac_2(datasets_),
@@ -59,4 +71,5 @@ workflow bench_dim_reduct {
         )
             | combine(datasets_, by: 0)
             | bench_embedding
+            */
 }

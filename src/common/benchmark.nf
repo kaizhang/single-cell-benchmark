@@ -1,13 +1,16 @@
 nextflow.enable.dsl=2
 
+include { json } from './utils.gvy'
+
 params.resultDir = 'results'
 
 process eval_embedding {
     container 'kaizhang/scatac-bench:0.2.0'
+    tag "${json(metadata).data_name}"
     input:
-      tuple val(name), val(method), path("reduced_dim.tsv"), path("data.h5ad")
+      tuple val(metadata), path("reduced_dim.tsv"), path("data.h5ad")
     output:
-      tuple val(name), val(method), path("benchmark.txt"), path("umap.tsv.gz")
+      tuple stdout, path("umap.tsv.gz")
 
     """
     #!/usr/bin/env python3
@@ -15,6 +18,10 @@ process eval_embedding {
     from sklearn.metrics import adjusted_rand_score, silhouette_score, adjusted_mutual_info_score
     import pandas as pd
     import numpy as np
+    import json
+
+    metadata = json.loads('${metadata}')
+
     adata = snap.read("data.h5ad", backed=None)
     embedding = np.genfromtxt(
         "reduced_dim.tsv",
@@ -51,11 +58,15 @@ process eval_embedding {
             "UMAP-1": umap[:, 0],
             "UMAP-2": umap[:, 1],
             "cell_annotation": adata.obs["cell_annotation"],
-            "method": '${method}',
+            "method": metadata['bench_id'],
         }).to_csv("umap.tsv.gz", sep="\t", index=False, header=True)
-        with open("benchmark.txt", "w") as f:
-            ss = silhouette_score(umap, adata.obs["cell_annotation"], sample_size = 10000)
-            print("\t".join([str(ari), str(ami), str(ss)]), file=f)
+
+        metadata.update({
+            "ARI": float(ari),
+            "AMI": float(ami),
+            "silhouette_score": float(silhouette_score(umap, adata.obs["cell_annotation"], sample_size = 10000)),
+        })
+        print(json.dumps(metadata), end='')
     """
 }
 
@@ -81,8 +92,8 @@ process eval_cluster {
     """
 }
 
-
 process output_metrics {
+    container 'kaizhang/scatac-bench:0.2.0'
     publishDir "${params.resultDir}/metrics", mode: 'copy'
 
     input:
@@ -90,16 +101,23 @@ process output_metrics {
     output:
         path "benchmark.tsv"
 
-    exec:
-    outputFile = task.workDir.resolve("benchmark.tsv")
-    outputFile.text = "dataset\talgorithm\tARI\tAMI\tsilhouette_score\n"
-    for (x in result) {
-        outputFile.append([
-            x[0],
-            x[1],
-            x[2].text
-        ].join('\t'))
-    }
+    """
+    #!/usr/bin/env python3
+    import json
+    import pandas as pd
+
+    dicts = []
+    for item in ${result}:
+        metadata = json.loads(item)
+        dicts.append({
+            "dataset": metadata['data_name'],
+            "algorithm": metadata['bench_id'],
+            "ARI": metadata['ARI'],
+            "AMI": metadata['AMI'],
+            "silhouette_score": metadata['silhouette_score'],
+        })
+    pd.DataFrame(dicts).to_csv("benchmark.tsv", sep="\t", index=False, header=True)
+    """
 }
 
 process plot_metrics {
@@ -177,10 +195,10 @@ process plot_metrics {
 }
 
 process plot_umap {
-    publishDir "${params.resultDir}/plots", mode: 'copy'
+    publishDir "${params.resultDir}/plots/UMAP/", mode: 'copy'
     container 'kaizhang/scatac-bench:0.2.0'
     input:
-        tuple val(dataset), path(umap, stageAs: "?.tsv.gz")
+        tuple val(name), path(umap, stageAs: "?.tsv.gz")
     output:
         file "*.pdf"
 
@@ -217,7 +235,7 @@ process plot_umap {
             legend_key=element_rect(color = "white"),
         )
         + guides(fill = guide_legend(override_aes = {'size': 3}))
-    ).save("${dataset}.pdf", dpi=300)
+    ).save("${name}.pdf", dpi=300)
     """
 }
 
@@ -225,8 +243,11 @@ workflow bench_embedding {
     take: datasets
     main:
         metrics = datasets | eval_embedding
-        metrics | toSortedList | output_metrics | plot_metrics
-        metrics | map {[it[0], it[3]]} | groupTuple(sort: true) | plot_umap
+        metrics | map { "'" + it[0] + "'" } | toSortedList | output_metrics | plot_metrics
+        metrics
+            | map { [json(it[0]).data_name, it[1]] }
+            | groupTuple(sort: true)
+            | plot_umap
 }
 
 workflow bench_clustering {

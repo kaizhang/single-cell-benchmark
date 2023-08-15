@@ -1,1 +1,1 @@
-nextflow run src/main.nf -resume -profile singularity $@
+nextflow run src/main.nf -resume $@

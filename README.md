@@ -1,17 +1,17 @@
 # Comprehensive benchmark of dimension reduction methods for single-cell data analysis
 
-Software requirements
+## Software requirements
 
 - [Nextflow](https://www.nextflow.io/)
 - Docker or Singularity
 
-The list of scATAC-seq datasets
--------------------------------
+## The list of benchmarking datasets
 
-https://1drv.ms/x/s!AuDfAP0z9Zsma9Hsr9Ggoz3MtFU?e=0RKKLU
+- scATAC-seq: https://1drv.ms/x/s!AuDfAP0z9Zsma9Hsr9Ggoz3MtFU?e=0RKKLU
+- scRNA-seq:
+- scHi-C:
 
-How to prepare benchmark dataset
---------------------------------
+## How to prepare new benchmark datasets
 
 Benchmark data is stored in `anndata` format. The `anndata` object should contain:
 
@@ -19,15 +19,10 @@ Benchmark data is stored in `anndata` format. The `anndata` object should contai
 2. `adata.obs["cell_annotation"]`: cluster/cell-type annotation of each barcode.
 3. `data.obs['batch']`: batch annotation of each barcode (optional).
 
-The list of scRNA-seq datasets
--------------------------------
+## How to run benchmark
 
-The list of scHi-C datasets
--------------------------------
+Use `./bench.sh -profile singularity` or `./bench.sh -profile docker` to run benchmarks.
+The benchmark results will be stored in `./results` folder.
 
-How to run benchmark
---------------------
-
-Use `./bench.sh` within each subdirectory to run benchmark. The benchmark results will be stored in `./results` folder.
-
-You can choose to run specific benchmark by specifying the benchmark name. For example, `./bench.sh -entry ATAC` will run ATAC benchmark only.
+You can choose to run specific benchmark by specifying the benchmark name.
+For example, `./bench.sh -entry atac` will run scATAC-seq benchmark only.

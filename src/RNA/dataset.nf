@@ -3,16 +3,18 @@ nextflow.enable.dsl=2
 process data_Koh { 
     container 'kaizhang/scatac-bench:0.2.0'
     output:
-      tuple val("Koh"), path("Koh.h5ad")
+      tuple val("{dataset: Koh}"), path("Koh.h5ad")
     """
     #!/usr/bin/env python
     import pooch
+    import json
     pooch.retrieve(
         "https://osf.io/download/97pfy/",
         "sha256:184b2f045fd4067b9101084abc5488da20fee77848b696a6bf129c5ec904cbed",
         fname="Koh.h5ad",
         path="./",
     )
+    print(json.dumps({"dataset": "Koh"}), end='')
     """
 }
 

@@ -1,14 +1,19 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_episcanpy {
     container 'kaizhang/episcanpy:0.4.0'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     errorStrategy 'ignore'
+
+    when: is_included("PCA", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val("epiScanpy (PCA)"), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'epiScanpy (PCA)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python

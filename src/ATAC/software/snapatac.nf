@@ -1,16 +1,20 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct_snapatac {
     container 'kaizhang/snapatac:1.0'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
     memory '100G'
     errorStrategy 'ignore'
 
+    when: is_included("snapatac", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val("SnapATAC"), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'SnapATAC')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env Rscript

@@ -1,26 +1,25 @@
 nextflow.enable.dsl=2
 
+include { is_included; add_meta; json; } from '../../common/utils.gvy'
+
 process dim_reduct {
     container 'kaizhang/snapatac2:2.3.1'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
+
+    when: is_included("snapatac2", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val("SnapATAC2"), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'SnapATAC2')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3
-    import scanpy as sc
     import snapatac2 as snap
     import numpy as np
 
-    adata = sc.read("data.h5ad")
-    adata.var_names_make_unique()
-    sc.pp.normalize_total(adata, target_sum=1e4)
-    sc.pp.log1p(adata)
-    sc.pp.highly_variable_genes(adata, n_top_genes=5000)
-    adata = adata[:, adata.var.highly_variable]
+    adata = snap.read("data.h5ad", backed=None)
     snap.tl.spectral(adata, features=None)
     np.savetxt("reduced_dim.tsv", adata.obsm['X_spectral'], delimiter="\t")
     """
@@ -28,25 +27,23 @@ process dim_reduct {
 
 process dim_reduct_svd {
     container 'kaizhang/snapatac2:2.3.1'
-    tag "$name"
+    tag "${json(metadata).data_name}"
     cpus 4
+
+    when: is_included("snapatac2 (svd)", params.method_include, params.method_exclude)
+
     input:
-      tuple val(name), path("data.h5ad")
+      tuple val(metadata), path("data.h5ad")
     output:
-      tuple val(name), val("SnapATAC2 (svd)"), path("reduced_dim.tsv")
+      tuple val("${add_meta(metadata, 'method', 'SnapATAC2 (svd)')}"), path("reduced_dim.tsv")
 
     """
     #!/usr/bin/env python3
-    import scanpy as sc
     import snapatac2 as snap
     import scipy as sp
     import numpy as np
+
     adata = snap.read("data.h5ad", backed=None)
-    adata.var_names_make_unique()
-    sc.pp.normalize_total(adata, target_sum=1e4)
-    sc.pp.log1p(adata)
-    sc.pp.highly_variable_genes(adata, n_top_genes=5000)
-    adata = adata[:, adata.var.highly_variable]
     feature_weights = snap.tl._embedding.idf(adata)
     X = adata.X @ sp.sparse.diags(feature_weights)
     s = 1 / np.sqrt(np.ravel(sp.sparse.csr_matrix.power(X, 2).sum(axis = 1)))
