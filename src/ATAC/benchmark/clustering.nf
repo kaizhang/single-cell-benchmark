@@ -3,43 +3,38 @@ nextflow.enable.dsl=2
 params.outdir = "results"
 
 include { dim_reduct_cosine as snapatac2 } from '../software/snapatac2.nf'
-
-include { bench_clustering as bench
-        } from '../../common/benchmark.nf' params(resultDir: "${params.outdir}/ATAC/clustering")
+include { bench_clustering } from '../../common/benchmark.nf' params(resultDir: "${params.outdir}/ATAC/clustering")
 include { knn_leiden_exact;
           knn_leiden_hora;
           knn_leiden_exact_weighted;
           kmeans;
         } from '../../common/algorithms/clustering.nf'
 
+include { json } from '../../common/utils.gvy'
 
-workflow bench_clustering {
+workflow bench {
     take: datasets
     main:
-        data = datasets | map { [it[0], it[1]] }
-        embeddings = snapatac2(data) | combine(data, by: 0)
-
-        knn_leiden_exact(embeddings) | concat(
+        embeddings = snapatac2(datasets)
+            | map({ [json(it[0]).data_name, it] })
+            | combine(
+                datasets | map({ [json(it[0]).data_name, it[1]] }),
+                by: 0
+            )
+            | map ({ [it[1][0], it[1][1], it[2]] })
+ 
+        clusters = knn_leiden_exact(embeddings) | concat(
             knn_leiden_hora(embeddings),
             knn_leiden_exact_weighted(embeddings),
             kmeans(embeddings),
         )
-            | combine(data, by: 0)
-            | bench
-}
 
-// Simulated datasets with different sequencing depth and noise level.
-workflow bench_clustering_coverage {
-    take: datasets
-    main:
-        data = datasets | map { [it[0], it[1]] }
-        embeddings = snapatac2(data) | combine(data, by: 0)
-
-        knn_leiden_exact(embeddings) | concat(
-            knn_leiden_hora(embeddings),
-            knn_leiden_exact_weighted(embeddings),
-            kmeans(embeddings),
-        )
-            | combine(data, by: 0)
-            | bench
+        clusters
+            | map({ [json(it[0]).data_name, it] })
+            | combine(
+                datasets | map({ [json(it[0]).data_name, it[1]] }),
+                by: 0
+            )
+            | map ({ [it[1][0], it[1][1], it[2]] })
+            | bench_clustering
 }

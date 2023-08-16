@@ -1,11 +1,13 @@
 nextflow.enable.dsl=2
 
+include { add_meta; json } from '../../common/utils.gvy'
+
 process knn_leiden_exact {
     container 'kaizhang/snapatac2:2.3.1'
     input:
-      tuple val(name), val(method), path("reduced_dim.tsv"), path("data.h5ad")
+      tuple val(metadata), path("reduced_dim.tsv"), path("data.h5ad")
     output:
-      tuple val(name), val("knn+leiden (exact)"), path("clusters.txt")
+      tuple val("${add_meta(metadata, 'bench_id', 'knn+leiden (exact)')}"), path("clusters.txt")
 
     """
     #!/usr/bin/env python3
@@ -40,9 +42,9 @@ process knn_leiden_exact {
 process knn_leiden_exact_weighted {
     container 'kaizhang/snapatac2:2.3.1'
     input:
-      tuple val(name), val(method), path("reduced_dim.tsv"), path("data.h5ad")
+      tuple val(metadata), path("reduced_dim.tsv"), path("data.h5ad")
     output:
-      tuple val(name), val("knn+leiden (exact+weighted)"), path("clusters.txt")
+      tuple val("${add_meta(metadata, 'bench_id', 'weighted_knn+leiden (exact)')}"), path("clusters.txt")
 
     """
     #!/usr/bin/env python3
@@ -77,9 +79,9 @@ process knn_leiden_exact_weighted {
 process knn_leiden_hora {
     container 'kaizhang/snapatac2:2.3.1'
     input:
-      tuple val(name), val(method), path("reduced_dim.tsv"), path("data.h5ad")
+      tuple val(metadata), path("reduced_dim.tsv"), path("data.h5ad")
     output:
-      tuple val(name), val("knn+leiden (hora)"), path("clusters.txt")
+      tuple val("${add_meta(metadata, 'bench_id', 'knn+leiden (hora)')}"), path("clusters.txt")
 
     """
     #!/usr/bin/env python3
@@ -114,9 +116,9 @@ process knn_leiden_hora {
 process kmeans {
     container 'kaizhang/snapatac2:2.3.1'
     input:
-      tuple val(name), val(method), path("reduced_dim.tsv"), path("data.h5ad")
+      tuple val(metadata), path("reduced_dim.tsv"), path("data.h5ad")
     output:
-      tuple val(name), val("K-means"), path("clusters.txt")
+      tuple val("${add_meta(metadata, 'bench_id', 'Kmeans')}"), path("clusters.txt")
 
     """
     #!/usr/bin/env python3

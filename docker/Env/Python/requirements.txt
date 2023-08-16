@@ -1,3 +1,4 @@
 snapatac2==2.3.1
+scib==1.1.4
 glasbey
 plotnine

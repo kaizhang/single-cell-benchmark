@@ -3,21 +3,31 @@ nextflow.enable.dsl=2
 params.outdir = 'results'
 
 include { download_dataset } from '../common/download'
-include { bench_dim_reduct } from './benchmark/dim_reduct.nf'
-include { bench_subsample } from './benchmark/subsample.nf'
-include { bench_clustering } from './benchmark/clustering.nf'
-include { bench_leiden } from './benchmark/leiden.nf'
+include { bench as dim_reduct } from './benchmark/dim_reduct.nf'
+include { bench as subsample } from './benchmark/subsample.nf'
+include { bench as clustering } from './benchmark/clustering.nf'
+include { bench as leiden } from './benchmark/leiden_resolution.nf'
+include { bench as batch_correction } from './benchmark/batch_correction.nf'
+
+include { json } from '../common/utils.gvy'
 
 workflow bench_atac {
     take: metadata
 
     main:
-        data_full = metadata | filter {it.type == "ATAC" } | download_dataset
+        data = metadata
+            | filter {it.assay == "ATAC" }
+            | download_dataset
+            | branch {
+                without_batch: !json(it[0]).containsKey('batch_key')
+                with_batch: json(it[0]).containsKey('batch_key')
+            }
 
-        bench_dim_reduct(data_full)
+        dim_reduct(data.without_batch)
+        clustering(data.without_batch)
         //bench_subsample(datasets | map { [it[0], it[1]] })
-        //bench_clustering(datasets)
-        //bench_leiden(datasets)
+        //bench_leiden(data_full)
+        batch_correction(data.with_batch)
 }
 
 workflow bench_atac_simulated {

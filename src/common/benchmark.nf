@@ -73,9 +73,9 @@ process eval_embedding {
 process eval_cluster {
     container 'kaizhang/scatac-bench:0.2.0'
     input:
-      tuple val(name), val(method), path("clusters.tsv"), path("data.h5ad")
+      tuple val(metadata), path("clusters.tsv"), path("data.h5ad")
     output:
-      tuple val(name), val(method), path("benchmark.txt")
+      stdout
 
     """
     #!/usr/bin/env python3
@@ -83,12 +83,16 @@ process eval_cluster {
     from sklearn.metrics import adjusted_rand_score, silhouette_score, adjusted_mutual_info_score
     import pandas as pd
     import numpy as np
+    import json
+    metadata = json.loads('${metadata}')
     adata = snap.read("data.h5ad", backed=None)
     clusters = np.genfromtxt("clusters.tsv")
-    ari = adjusted_rand_score(clusters, adata.obs["cell_annotation"])
-    ami = adjusted_mutual_info_score(clusters, adata.obs["cell_annotation"])
-    with open("benchmark.txt", "w") as f:
-        print("\t".join([str(ari), str(ami), 'NA']), file=f)
+    metadata.update({
+        "ARI": float(adjusted_rand_score(clusters, adata.obs["cell_annotation"])),
+        "AMI": float(adjusted_mutual_info_score(clusters, adata.obs["cell_annotation"])),
+        "silhouette_score": float(silhouette_score(adata.X, adata.obs["cell_annotation"], sample_size = 10000)),
+    })
+    print(json.dumps(metadata), end='')
     """
 }
 
@@ -254,5 +258,5 @@ workflow bench_clustering {
     take: datasets
     main:
         metrics = datasets | eval_cluster
-        metrics | toSortedList | output_metrics | plot_metrics
+        metrics | map { "'" + it + "'" } | toSortedList | output_metrics | plot_metrics
 }

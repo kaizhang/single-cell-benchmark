@@ -7,7 +7,7 @@ process dim_reduct_scale {
     tag "${json(metadata).data_name}"
     errorStrategy 'ignore'
     containerOptions '--nv'
-    cpus 16
+    cpus 8
 
     when: is_included("scale", params.method_include, params.method_exclude)
 

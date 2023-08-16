@@ -7,7 +7,7 @@ process dim_reduct {
     tag "${json(metadata).data_name}"
     cpus 4
 
-    when: is_included("PCA", params.method_include, params.method_exclude)
+    when: is_included("pca", params.method_include, params.method_exclude)
 
     input:
       tuple val(metadata), path("data.h5ad")

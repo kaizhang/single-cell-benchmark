@@ -169,7 +169,7 @@ process plot {
     """
 }
 
-workflow bench_subsample {
+workflow bench {
     take: datasets
     main:
         data = datasets

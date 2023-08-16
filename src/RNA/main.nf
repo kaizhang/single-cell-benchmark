@@ -18,7 +18,7 @@ workflow bench_rna {
     take: metadata
 
     main:
-        data_full = metadata | filter {it.type == "RNA" } | download_dataset
+        data_full = metadata | filter {it.assay == "RNA" } | download_dataset
 
         data_hvg = highly_variable_genes(data_full, params.num_hvg)
         data_scaled = scale_features(data_hvg)

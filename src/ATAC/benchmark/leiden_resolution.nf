@@ -1,20 +1,14 @@
 nextflow.enable.dsl=2
 
 include { dim_reduct_cosine as snapatac2 } from '../software/snapatac2.nf'
-
-include { bench_clustering as bench
-        } from '../../common/benchmark.nf' params(resultDir: "${params.outdir}/ATAC/dim_reduct")
-include { knn_leiden_exact;
-          knn_leiden_hora;
-          kmeans;
-        } from '../../common/algorithms/clustering.nf'
+include { json } from '../../common/utils.gvy'
 
 process leiden {
     container 'kaizhang/snapatac2:2.3.1'
     input:
-      tuple val(name), val(method), path("reduced_dim.tsv"), path('data.h5ad')
+      tuple val(name), path("reduced_dim.tsv"), path('data.h5ad')
     output:
-      tuple val(name), val("leiden"), path("result.csv.gz")
+      path("result.csv.gz")
 
     """
     #!/usr/bin/env python3
@@ -139,16 +133,18 @@ process plot {
     """
 }
 
-
-
-workflow bench_leiden {
+workflow bench {
     take: datasets
     main:
-        data = datasets | map { [it[0], it[1]] }
-        snapatac2(data)
-            | combine(data, by: 0)
+        embedding = snapatac2(datasets)
+
+        embedding
+            | map({ [json(it[0]).data_name, it[1]] })
+            | combine(
+                datasets | map({ [json(it[0]).data_name, it[1]] }),
+                by: 0
+            )
             | leiden
-            | map { it[2] }
             | toSortedList
             | report
             | plot

@@ -22,8 +22,17 @@ process dim_reduct_peakvi {
     import numpy as np
     import scvi
     import math
+    import json
+
     data = ad.read("data.h5ad")
-    scvi.model.PEAKVI.setup_anndata(data)
+    metadata = json.loads('${metadata}')
+
+    if 'batch_key' in metadata:
+        batch_key = metadata['batch_key']
+        scvi.model.PEAKVI.setup_anndata(data, batch_key=batch_key)
+    else:
+        scvi.model.PEAKVI.setup_anndata(data)
+
     pvi = scvi.model.PEAKVI(data, n_latent=30)
     pvi.train()
     latent = pvi.get_latent_representation()

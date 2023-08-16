@@ -16,15 +16,15 @@ workflow atac_simulated {
 }
 
 workflow {
-    if (params.pipelines == null || params.pipelines.contains('ATAC')) {
+    if (params.assays == null || params.assays.contains('ATAC')) {
         bench_atac(datasets)
     }
     
-    if (params.pipelines == null || params.pipelines.contains('RNA')) {
+    if (params.assays == null || params.assays.contains('RNA')) {
         bench_rna(datasets)
     }
 
-    if (params.pipelines == null || params.pipelines.contains('HiC')) {
+    if (params.assays == null || params.assays.contains('HiC')) {
         bench_hic()
     }
 }

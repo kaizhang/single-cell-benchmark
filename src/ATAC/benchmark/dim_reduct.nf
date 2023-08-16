@@ -2,8 +2,6 @@ nextflow.enable.dsl=2
 
 params.outdir = "results"
 
-include { download_hg38; download_hg19; } from '../dataset.nf'
-
 include { dim_reduct_snapatac as snapatac; } from '../software/snapatac.nf'
 include { dim_reduct_jaccard as snapatac2_jaccard;
           dim_reduct_cosine as snapatac2_cosine;
@@ -53,7 +51,7 @@ process download_genome {
     """
 }
 
-workflow bench_dim_reduct {
+workflow bench {
     take: datasets
     main:
         genomes = Channel.of("mm10", "hg38", "hg19") | download_genome
