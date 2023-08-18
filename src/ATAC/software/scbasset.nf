@@ -19,11 +19,41 @@ process dim_reduct_scbasset {
     """
     #!/usr/bin/env python3
     import anndata as ad
+    import pandas as pd
     import numpy as np
     import h5py
     import gc
+    import json
     from scbasset.utils import *
 
+    def assign_free_gpus(threshold_vram_usage=1500):
+        import subprocess
+        import os
+        def _check():
+            # Get the list of GPUs via nvidia-smi
+            smi_query_result = subprocess.check_output(
+                "nvidia-smi -q -d Memory | grep -A4 GPU", shell=True
+            )
+            # Extract the usage information
+            gpu_info = smi_query_result.decode("utf-8").split("\\n")
+            gpu_info = list(filter(lambda info: "Used" in info, gpu_info))
+            gpu_info = [
+                int(x.split(":")[1].replace("MiB", "").strip()) for x in gpu_info
+            ]  # Remove garbage
+            # Keep gpus under threshold only
+            free_gpus = [
+                str(i) for i, mem in enumerate(gpu_info) if mem < threshold_vram_usage
+            ]
+            gpus_to_use = ",".join(free_gpus)
+            return gpus_to_use
+
+        gpus_to_use = _check()
+        if not gpus_to_use:
+            raise RuntimeError("No free GPUs found")
+        os.environ["CUDA_VISIBLE_DEVICES"] = gpus_to_use
+    
+
+    metadata = json.loads('${metadata}')
     adata = ad.read_h5ad("data.h5ad")
     adata.var['chr'] = [x.split(':')[0] for x in adata.var_names]
     adata.var['start'] = [int(x.split(':')[1].split('-')[0]) for x in adata.var_names]
@@ -52,13 +82,12 @@ process dim_reduct_scbasset {
     m = adata.X.tocoo().transpose().tocsr()
     print_memory()
     
-    del adata
-    gc.collect()
-    
     m_train = m[train_ids,:]
     m_val = m[val_ids,:]
     del m
     gc.collect()
+
+    assign_free_gpus()
     
     # generate tf.datasets
     train_ds = tf.data.Dataset.from_generator(
@@ -78,7 +107,12 @@ process dim_reduct_scbasset {
     ).batch(128).prefetch(tf.data.AUTOTUNE)
     
     # build model
-    model = make_model(bottleneck_size, n_cells)
+    if 'batch_key' in metadata:
+        batch_key = metadata['batch_key']
+        batch_m = pd.get_dummies(adata.obs[batch_key])
+        model = make_model_bc(bottleneck_size, n_cells, batch_m, l2_1=0, l2_2=0)
+    else:
+        model = make_model(bottleneck_size, n_cells)
 
     # compile model
     loss_fn = tf.keras.losses.BinaryCrossentropy()

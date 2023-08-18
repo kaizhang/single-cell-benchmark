@@ -40,6 +40,7 @@ process dim_reduct_archr_1 {
     """
 }
 
+// This is the default method in ArchR
 process dim_reduct_archr_2 {
     container 'kaizhang/archr:1.0.1'
     tag "${json(metadata).data_name}"

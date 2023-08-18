@@ -22,6 +22,7 @@ Benchmark data is stored in `anndata` format. The `anndata` object should contai
 ## How to run benchmark
 
 The pipeline uses docker or singularity containers to run the benchmark. Therefore, you need to install either docker or singularity on your machine.
+The pipeline needs to download large data files, so make sure you have enough disk space (>20G) and a fast internet connection.
 
 Use `./bench.sh -profile singularity` or `./bench.sh -profile docker` to run benchmarks.
 The benchmark results will be stored in `./results` folder.

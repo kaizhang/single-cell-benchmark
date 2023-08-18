@@ -1,4 +1,5 @@
 snapatac2==2.3.1
-scib==1.1.4
+scib-metrics==0.3.3
+faiss-gpu
 glasbey
 plotnine

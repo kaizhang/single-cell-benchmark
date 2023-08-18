@@ -23,11 +23,20 @@ workflow bench_atac {
                 with_batch: json(it[0]).containsKey('batch_key')
             }
 
-        dim_reduct(data.without_batch)
-        clustering(data.without_batch)
+        if (params.components == null || params.components.contains('dim_reduct')) {
+            dim_reduct(data.without_batch)
+        }
+
+        if (params.components == null || params.components.contains('batch_correction')) {
+            batch_correction(data.with_batch)
+        }
+
+        if (params.components == null || params.components.contains('clustering')) {
+            clustering(data.without_batch)
+        }
+
         //bench_subsample(datasets | map { [it[0], it[1]] })
         //bench_leiden(data_full)
-        batch_correction(data.with_batch)
 }
 
 workflow bench_atac_simulated {
