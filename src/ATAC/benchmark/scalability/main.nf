@@ -24,7 +24,7 @@ include { download_dataset;
           prep_h5ad;
         } from './dataset'
 
-workflow {
+workflow bench {
     data = download_dataset() | merge
 
     bench_data = subsample(
@@ -42,5 +42,5 @@ workflow {
     dim_reduct_episcanpy(h5ads)
     dim_reduct_snapatac(h5ads | filter { it[0] <= 30000 })
     dim_reduct_pycistopic(h5ads | filter { it[0] <= 10000 })
-    //dim_reduct_peakvi(h5ads | filter {it[0] <= 20000 })
+    dim_reduct_peakvi(h5ads)
 }

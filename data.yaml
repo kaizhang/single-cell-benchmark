@@ -128,11 +128,11 @@
   data_url: https://osf.io/download/3pexa/
   genome: mm10
   assay: ATAC
-- data_hash: sha256:046a33f87f573f2730df107ae36bcb7ef78bcd7295e5a4bcaa50b14df73e3bf7
-  data_name: Zhang_Cell_2021
-  data_url: https://osf.io/download/k6tys/
-  genome: hg38
-  assay: ATAC
+#- data_hash: sha256:046a33f87f573f2730df107ae36bcb7ef78bcd7295e5a4bcaa50b14df73e3bf7
+#  data_name: Zhang_Cell_2021
+#  data_url: https://osf.io/download/k6tys/
+#  genome: hg38
+#  assay: ATAC
 
 - data_hash: sha256:0c7fc18829d8f36bf34946effc2eebca3df874874a001d2ae68c80d3ded69e3c
   data_name: GSE194122
@@ -146,3 +146,25 @@
   genome: hg38
   batch_key: 'batch'
   assay: ATAC
+
+- data_hash: sha256:86bd2af7f8b5eeb3bb3ae4e983f852818f7447eac8811ba0d60cf47b15ad38b3
+  data_name: 10x_PBMC
+  data_url: https://osf.io/download/utvhp/
+  genome: hg38
+  assay: 'Multiome:ATAC'
+- data_hash: sha256:945ede712bdbabeccecafad917b4e35997542d68ed5d5a792d127c79f1e35796
+  data_name: 10x_PBMC
+  data_url: https://osf.io/download/45fr2/
+  genome: hg38
+  assay: 'Multiome:RNA'
+
+- data_hash: sha256:ec16b8279ca916c49d2fe3af9b121e35fae6c0ba7babc383f0d15ef9974cce2f
+  data_name: Xie_2023
+  data_url: https://osf.io/download/hgcy4/
+  genome: mm10
+  assay: 'Multiome:ATAC'
+- data_hash: sha256:2f0c8a44cca5d191dbead99799fef2931db2ef0cf945df7cb4e457b400de5f1f
+  data_name: Xie_2023
+  data_url: https://osf.io/download/qs3ng/
+  genome: mm10
+  assay: 'Multiome:RNA'

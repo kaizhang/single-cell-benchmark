@@ -136,7 +136,8 @@ process dim_reduct_scbasset {
         callbacks=callbacks,
         validation_data=val_ds)
 
-    proj = get_cell_embedding(model) # get_cell_embedding function
+    proj = get_cell_embedding(model, bc_model='batch_key' in metadata)
+
     np.savetxt("reduced_dim.tsv", proj, delimiter="\t")
     """
 }

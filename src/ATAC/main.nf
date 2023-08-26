@@ -8,6 +8,7 @@ include { bench as subsample } from './benchmark/subsample.nf'
 include { bench as clustering } from './benchmark/clustering.nf'
 include { bench as leiden } from './benchmark/leiden_resolution.nf'
 include { bench as batch_correction } from './benchmark/batch_correction.nf'
+include { bench as scalability } from './benchmark/scalability/main.nf'
 
 include { json } from '../common/utils.gvy'
 
@@ -33,6 +34,10 @@ workflow bench_atac {
 
         if (params.components == null || params.components.contains('clustering')) {
             clustering(data.without_batch)
+        }
+
+        if (params.components == null || params.components.contains('scalability')) {
+            scalability()
         }
 
         //bench_subsample(datasets | map { [it[0], it[1]] })

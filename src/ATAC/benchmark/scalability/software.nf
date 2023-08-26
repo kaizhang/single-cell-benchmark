@@ -1,5 +1,7 @@
 nextflow.enable.dsl=2
 
+include { is_included } from '../../../common/utils.gvy'
+
 ////////////////////////////////////////////////////////////////////////////////
 // SnapATAC2                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
@@ -8,6 +10,10 @@ process preproc_snapatac2 {
     container 'kaizhang/snapatac2:2.3.1'
     tag "$name"
     cpus 4
+    memory '120 GB'
+
+    when: is_included("snapatac2", params.method_include, params.method_exclude)
+
     input:
       tuple val(name), path("nsrt.tsv.gz"), path("srt.tsv.gz")
     output:
@@ -32,6 +38,10 @@ process dim_reduct_snapatac2 {
     stageInMode "copy"
     tag "$name"
     cpus 4
+    memory '120 GB'
+
+    when: is_included("snapatac2", params.method_include, params.method_exclude)
+
     input:
       tuple val(name), path(data)
 
@@ -48,6 +58,10 @@ process clust_snapatac2 {
     stageInMode "copy"
     tag "$name"
     cpus 4
+    memory '120 GB'
+
+    when: is_included("snapatac2", params.method_include, params.method_exclude)
+
     input:
       tuple val(name), path(data)
     output:
@@ -70,6 +84,10 @@ process preproc_snapatac_1 {
     container 'kaizhang/snapatac:1.0'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("snapatac", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("name_srt.bed.gz"), path("srt.bed.gz"), path("anno.gff3.gz")
@@ -125,6 +143,10 @@ process dim_reduct_snapatac {
     container 'kaizhang/snapatac:1.0'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("snapatac", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("data.h5ad")
@@ -157,6 +179,11 @@ process clust_snapatac {
     stageInMode "copy"
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("snapatac", params.method_include, params.method_exclude)
+
     input:
       tuple val(name), path(data)
     output:
@@ -190,6 +217,10 @@ process  preproc_archr {
     container 'kaizhang/archr:1.0.1'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("archr", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("nsrt.tsv.gz"), path("srt.tsv.gz")
@@ -226,6 +257,10 @@ process dim_reduct_archr {
     container 'kaizhang/archr:1.0.1'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("archr", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("data.h5ad")
@@ -257,6 +292,10 @@ process clust_archr {
     stageInMode "copy"
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("archr", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path(archr)
@@ -282,6 +321,10 @@ process dim_reduct_pycistopic {
     container 'kaizhang/pycistopic:latest'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("cistopic", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("data.h5ad")
@@ -322,6 +365,10 @@ process dim_reduct_peakvi {
     container 'kaizhang/scvi-tools:0.19.0'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("peakvi", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("data.h5ad")
@@ -346,6 +393,10 @@ process dim_reduct_signac {
     container 'kaizhang/signac:1.6'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("signac", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("data.h5ad")
@@ -372,6 +423,10 @@ process dim_reduct_scale {
     container 'kaizhang/scale:1.1.2'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("scale", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("data.h5ad")
@@ -396,6 +451,10 @@ process dim_reduct_episcanpy {
     container 'kaizhang/episcanpy:0.4.0'
     tag "$name"
     cpus 4
+    memory '120 GB'
+    errorStrategy 'ignore'
+
+    when: is_included("pca", params.method_include, params.method_exclude)
 
     input:
       tuple val(name), path("data.h5ad")

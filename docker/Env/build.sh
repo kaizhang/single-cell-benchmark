@@ -1,1 +1,1 @@
-docker build -t kaizhang/scatac-bench:0.2.0 -f env.Dockerfile .
+docker build -t kaizhang/scatac-bench:0.2.1 -f env.Dockerfile .

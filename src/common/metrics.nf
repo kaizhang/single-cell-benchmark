@@ -59,6 +59,8 @@ process eval_embedding {
     metrics["ARI"] = float(adjusted_rand_score(clusters, cell_anno))
     metrics["AMI"] = float(adjusted_mutual_info_score(clusters, cell_anno))
     metrics["Cell_type_ASW"] = scib_metrics.silhouette_label(embedding, cell_anno)
+    if knn.data.min() == 0:
+        knn.data = knn.data + 1e-6
     metrics['cLISI'] = float(np.median(scib_metrics.clisi_knn(knn, cell_anno)))
 
     if 'batch_key' in metadata:
@@ -76,6 +78,52 @@ process eval_embedding {
     metadata["metrics"] = metrics
     sys.stdout = original_stdout
     print(json.dumps(metadata), end='')
+    """
+}
+
+process umap {
+    container 'kaizhang/scatac-bench:0.2.1'
+    tag "${json(metadata).data_name}"
+    input:
+      tuple val(metadata), path("reduced_dim.tsv"), path("data.h5ad")
+    output:
+      tuple val(metadata), path("umap.tsv.gz")
+
+    """
+    #!/usr/bin/env python
+    import snapatac2 as snap
+    import numpy as np
+    import pandas as pd
+    import json
+
+    metadata = json.loads('${metadata}')
+    metrics = {}
+    adata = snap.read("data.h5ad", backed=None)
+
+    embedding = np.genfromtxt(
+        "reduced_dim.tsv",
+        missing_values="NA",
+        filling_values = np.nan,
+    )
+    umap = snap.tl.umap(embedding, inplace=False)
+
+    if 'batch_key' in metadata:
+        batch_key = metadata['batch_key']
+        umap = pd.DataFrame({
+            "UMAP-1": umap[:, 0],
+            "UMAP-2": umap[:, 1],
+            "cell_type": adata.obs["cell_annotation"],
+            "batch": adata.obs[batch_key],
+            "method": metadata['bench_id'],
+        })
+    else:
+        umap = pd.DataFrame({
+            "UMAP-1": umap[:, 0],
+            "UMAP-2": umap[:, 1],
+            "cell_type": adata.obs["cell_annotation"],
+            "method": metadata['bench_id'],
+        })
+    umap.to_csv("umap.tsv.gz", sep="\t", index=False, header=True)
     """
 }
 
@@ -99,6 +147,7 @@ process output_metrics {
         metric = metadata['metrics']
         metric['dataset'] = metadata['data_name']
         metric['algorithm'] = metadata['bench_id']
+        metric['group'] = metadata['group'] if 'group' in metadata else 'main'
         dicts.append(metric)
     pd.DataFrame(dicts).to_csv("metrics.tsv", sep="\t", index=False, header=True)
     """
@@ -149,47 +198,104 @@ process plot_metrics {
         # Perform min-max scaling column-wise
         df <- df %>% mutate(across(where(is.numeric), min_max_scaling))
 
+        contain_batch <- "kBET" %in% colnames(df)
+
         column_info <- tribble(
             ~id,                         ~group,             ~name,                       ~geom,       ~palette,    ~options,
             "id",                        NA,                 "",                          "text",      NA,          list(hjust = 0, width = 6),
-            "overall",                   NA,                 "Overall score",             "bar",       "palette3",  list(width = 3, legend = FALSE),
-            "bio_conservation",          "",                 "Bio conservation",          "bar",       "palette2",  list(width = 3, legend = FALSE),
-            #"cell_cycle_conservation",   "Bio conservation", "CC conservation",           "funkyrect", "palette2",  lst(),
-            #"isolated_label_F1",         "Bio conservation", "Isolated label F1",         "funkyrect", "palette2",  lst(),
-            "isolated_label_silhouette", "Bio conservation", "Isolated label silhouette", "funkyrect", "palette2",  lst(),
-            "AMI",         "Bio conservation", "NMI cluster label",         "funkyrect", "palette2",  lst(),
-            "ARI",         "Bio conservation", "ARI cluster label",         "funkyrect", "palette2",  lst(),
-            "Cell_type_ASW",                 "Bio conservation", "Cell type ASW",             "funkyrect", "palette2",  lst(),
-            "cLISI",                     "Bio conservation", "Graph cLISI",               "funkyrect", "palette2",  lst(),
-            #"hvg_overlap",               "Bio conservation", "HVG conservation",          "funkyrect", "palette2",  lst(),
-
-            "batch_correction",          NA,                 "Batch correction",          "bar",       "palette1",  list(width = 3, legend = FALSE),
-            "Batch_ASW",           "Batch correction", "Batch ASW",                 "funkyrect", "palette1",  lst(),
-            #"PCR_batch",                 "Batch correction", "PCR batch",                 "funkyrect", "palette1",  lst(),
-            "Graph_conn",                "Batch correction", "Graph connectivity",        "funkyrect", "palette1",  lst(),
-            "kBET",                      "Batch correction", "kBET",                      "funkyrect", "palette1",  lst(),
-            "iLISI",                     "Batch correction", "Graph iLISI",               "funkyrect", "palette1",  lst(),
         )
-     
-        if ("trajectory" %in% colnames(df)) {
-            column_info = add_row(
-                column_info,
-                id = "trajectory",
-                group = "Bio conservation",
-                name = "trajectory conservation",
-                geom = "funkyrect",
-                palette = "palette2",
-            )
+
+        if (contain_batch) {
+            column_info <- bind_rows(column_info, tribble(
+                ~id,                         ~group,             ~name,                       ~geom,       ~palette,    ~options,
+                "overall",                   "",                 "Overall score",             "bar",       "palette3",  list(width = 3, legend = FALSE),
+            ))
         }
 
+        column_info <- bind_rows(column_info, tribble(
+            ~id,                         ~group,             ~name,                       ~geom,       ~palette,    ~options,
+            "bio_conservation",          "",                 "Bio conservation",          "bar",       "palette2",  list(width = 3, legend = FALSE),
+            "ARI",         "Bio conservation", "ARI cluster label",         "funkyrect", "palette2",  lst(),
+            "AMI",         "Bio conservation", "NMI cluster label",         "funkyrect", "palette2",  lst(),
+            "Cell_type_ASW",                 "Bio conservation", "Cell type ASW",             "funkyrect", "palette2",  lst(),
+            "cLISI",                     "Bio conservation", "Graph cLISI",               "funkyrect", "palette2",  lst(),
+        ))
+
+        if (contain_batch) {
+            column_info <- bind_rows(column_info, tribble(
+                ~id,                         ~group,             ~name,                       ~geom,       ~palette,    ~options,
+                "isolated_label_silhouette", "Bio conservation", "Isolated label silhouette", "funkyrect", "palette2",  lst(),
+                "batch_correction",          "",                 "Batch correction",          "bar",       "palette1",  list(width = 3, legend = FALSE),
+                "Batch_ASW",                 "Batch correction", "Batch ASW",                 "funkyrect", "palette1",  lst(),
+                "Graph_conn",                "Batch correction", "Graph connectivity",        "funkyrect", "palette1",  lst(),
+                "kBET",                      "Batch correction", "kBET",                      "funkyrect", "palette1",  lst(),
+                "iLISI",                     "Batch correction", "Graph iLISI",               "funkyrect", "palette1",  lst(),
+            ))
+        }
+
+
         df['bio_conservation'] <- bio_conservation(df, column_info)
-        df['batch_correction'] <- batch_correction(df, column_info)
-        df['overall'] <- 0.6* df['bio_conservation'] + 0.4 * df['batch_correction']
-        df <- df %>% arrange(desc(overall))
+        df <- df %>% arrange(desc(bio_conservation))
+
+        if (contain_batch) {
+            df['batch_correction'] <- batch_correction(df, column_info)
+            df['overall'] <- 0.6* df['bio_conservation'] + 0.4 * df['batch_correction']
+            df <- df %>% arrange(desc(overall))
+        }
 
         g <- funky_heatmap(df, column_info = as.data.frame(column_info), expand = list(xmax = 4))
         ggsave(paste0(name, ".pdf"), g, device = cairo_pdf, width = g\$width, height = g\$height)
     }
+    """
+}
+
+process plot_umap {
+    publishDir "${params.resultDir}/figures/UMAP/", mode: 'copy'
+    container 'kaizhang/scatac-bench:0.2.1'
+    input:
+        tuple val(name), val(batch), path(umap, stageAs: "?.tsv.gz")
+    output:
+        file "*.pdf"
+
+    """
+    #!/usr/bin/env python3
+    from plotnine import *
+    import pandas as pd
+    import anndata as ad
+    import glasbey
+    import numpy as np
+
+    dfs = []
+    for file in "${umap}".split():
+        df = pd.read_csv(file, sep="\t")
+        n_points = df.shape[0]
+        dfs.append(df)
+    df = pd.concat(dfs, ignore_index=False)
+
+    def output_umap(df, label, file):
+        n_label = np.unique(np.array(list(map(str, df[label])))).size
+        n = -(np.unique(df['method'].to_numpy()).size // -4)
+        size = 0.1 if n_points > 20000 else 0.25
+        ( ggplot(df, aes(x='UMAP-1', y='UMAP-2', fill=label))
+            + geom_point(size=size, raster=True, stroke=0)
+            + facet_wrap('method', scales="free", ncol=4)
+            + scale_fill_manual(glasbey.create_palette(palette_size=n_label))
+            + theme_light(base_size=7)
+            + theme(
+                axis_ticks=element_blank(),
+                panel_grid_major=element_blank(),
+                panel_grid_minor=element_blank(),
+                figure_size=(1.7 * 4, 1.5 * n),
+                subplots_adjust={'hspace':0.4, 'wspace':0.2},
+                legend_key=element_rect(color = "white"),
+            )
+            + guides(fill = guide_legend(override_aes = {'size': 3}))
+        ).save(file, dpi=300)
+
+    output_umap(df, "cell_type", "${name}.pdf")
+
+    if "${batch == null}" == 'false':
+        output_umap(df, "batch", "${name}_batch.pdf")
     """
 }
 

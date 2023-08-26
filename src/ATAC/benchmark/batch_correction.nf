@@ -11,7 +11,7 @@ include { dim_reduct_pycistopic as cisTopic } from '../software/pycistopic.nf'
 include { dim_reduct_episcanpy as epiScanpy } from '../software/episcanpy.nf'
 include { dim_reduct_scbasset as scBasset } from '../software/scbasset.nf'
 
-include { eval_embedding; output_metrics; plot_metrics
+include { eval_embedding; output_metrics; plot_metrics; umap; plot_umap
         } from '../../common/metrics.nf' params(resultDir: "${params.outdir}/ATAC/batch_correction")
 include { json; genBenchId } from '../../common/utils.gvy'
 include { download_genome } from '../../common/download.nf'
@@ -76,6 +76,42 @@ process harmony_correct {
     """
 }
 
+process scanorama_correct {
+    //container 'kaizhang/snapatac2:2.3.1'
+    tag "${json(metadata).data_name}"
+    cpus 4
+    errorStrategy 'ignore'
+
+    input:
+      tuple val(metadata), path("reduced_dim.tsv"), path("data.h5ad")
+    output:
+      tuple stdout, path("corrected_embed.tsv")
+
+    """
+    #!/usr/bin/env python3
+    import snapatac2 as snap
+    import numpy as np
+    import json
+    import sys
+
+    # Redirect stdout to stderr
+    original_stdout = sys.stdout
+    sys.stdout = sys.stderr
+
+    metadata = json.loads('$metadata')
+    adata = snap.read("data.h5ad", backed=None)
+    batch_key = metadata['batch_key']
+    adata.obsm['X_embed'] = np.loadtxt("reduced_dim.tsv", delimiter="\t")
+
+    corrected = snap.pp.scanorama_integrate(adata, use_rep='X_embed', batch=batch_key, inplace=False)
+    np.savetxt("corrected_embed.tsv", corrected, delimiter="\t")
+
+    metadata['method'] += '/scanorama'
+    sys.stdout = original_stdout
+    print(json.dumps(metadata), end='')
+    """
+}
+
 workflow bench {
     take: datasets
     main:
@@ -105,17 +141,24 @@ workflow bench {
  
             mnc_correct(embedding),
             harmony_correct(embedding),
+            scanorama_correct(embedding),
         )
-
-        metrics = corrected_embedding
             | map({ [json(it[0]).data_name, it] })
             | combine(
                 datasets | map({ [json(it[0]).data_name, it[1]] }),
                 by: 0
             )
             | map ({ [genBenchId(it[1][0]), it[1][1], it[2]] })
+
+        corrected_embedding
             | eval_embedding
+            | map { "'" + it + "'" } | toSortedList
+            | output_metrics
+            | plot_metrics
 
-        metrics | map { "'" + it + "'" } | toSortedList | output_metrics | plot_metrics
-
+        corrected_embedding
+            | umap
+            | map { [json(it[0]).data_name, json(it[0]).batch_key, it[1]] }
+            | groupTuple(by: [0,1], sort: true)
+            | plot_umap
 }

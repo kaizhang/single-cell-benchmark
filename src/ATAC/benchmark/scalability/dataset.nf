@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process download_dataset {
-    container 'kaizhang/scatac-bench:0.2.0'
+    container 'kaizhang/scatac-bench:0.2.1'
     output:
       path("*.tsv.gz")
 
@@ -54,7 +54,7 @@ process download_dataset {
 }
 
 process merge {
-    container 'kaizhang/scatac-bench:0.2.0'
+    container 'kaizhang/scatac-bench:0.2.1'
     input:
       path(files)
     output:
@@ -68,7 +68,7 @@ process merge {
 
 
 process subsample {
-    container 'kaizhang/scatac-bench:0.2.0'
+    container 'kaizhang/scatac-bench:0.2.1'
     input:
       tuple val(n), path("fragment.tsv.gz"), path("_")
       each m
@@ -82,7 +82,7 @@ process subsample {
 }
 
 process prep_h5ad {
-    container 'kaizhang/scatac-bench:0.2.0'
+    container 'kaizhang/scatac-bench:0.2.1'
     tag "$name"
     input:
       tuple val(name), path("nsrt.tsv.gz"), path("_")

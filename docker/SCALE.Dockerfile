@@ -1,3 +1,2 @@
-FROM python:3.7-slim
-RUN apt-get update && apt-get install -y procps
-RUN pip install --no-cache anndata scale==1.1.2 leidenalg
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+RUN pip install --no-cache anndata numpy==1.23.* scale==1.1.2 leidenalg

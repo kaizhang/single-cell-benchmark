@@ -31,6 +31,9 @@ def genBenchId(metadata) {
     if ('hvg' in obj) {
         method = method + '/hvg_' + obj['hvg'].toString()
     } 
+    if ('atac_feats' in obj) {
+        method = method + '/atac_feats_' + obj['atac_feats'].toString()
+    } 
     if ('scaled' in obj && obj['scaled']) {
         method = method + '/scaled'
     }

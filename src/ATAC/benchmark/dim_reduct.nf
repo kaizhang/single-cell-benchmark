@@ -22,8 +22,8 @@ include { dim_reduct_pycistopic as cisTopic } from '../software/pycistopic.nf'
 include { dim_reduct_scbasset as scBasset } from '../software/scbasset.nf'
 include { dim_reduct_episcanpy as epiScanpy } from '../software/episcanpy.nf'
 
-include { bench_embedding
-        } from '../../common/benchmark.nf' params(resultDir: "${params.outdir}/ATAC/dim_reduct")
+include { eval_embedding; output_metrics; plot_metrics; umap; plot_umap
+        } from '../../common/metrics.nf' params(resultDir: "${params.outdir}/ATAC/dim_reduct")
 include { json; genBenchId } from '../../common/utils.gvy'
 include { download_genome } from '../../common/download.nf'
 
@@ -62,13 +62,22 @@ workflow bench {
                     | map({ [it[1], it[2], it[3]] })
             )
         )
-
-        embedding
             | map({ [json(it[0]).data_name, it] })
             | combine(
                 datasets | map({ [json(it[0]).data_name, it[1]] }),
                 by: 0
             )
             | map ({ [genBenchId(it[1][0]), it[1][1], it[2]] })
-            | bench_embedding
+
+        embedding
+            | eval_embedding
+            | map { "'" + it + "'" } | toSortedList
+            | output_metrics
+            | plot_metrics
+
+        embedding
+            | umap
+            | map { [json(it[0]).data_name, json(it[0]).batch_key, it[1]] }
+            | groupTuple(by: [0,1], sort: true)
+            | plot_umap
 }

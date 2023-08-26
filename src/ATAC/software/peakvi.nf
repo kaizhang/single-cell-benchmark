@@ -24,6 +24,8 @@ process dim_reduct_peakvi {
     import math
     import json
 
+    scvi.settings.seed = 0
+
     data = ad.read("data.h5ad")
     metadata = json.loads('${metadata}')
 
