@@ -35,13 +35,14 @@ process eval_embedding {
         filling_values = np.nan,
     )
 
-    knn = snap.pp.knn(embedding, method="exact", inplace=False)
+    knn_50 = snap.pp.knn(embedding, n_neighbors=50, method="exact", inplace=False)
+    knn_90 = snap.pp.knn(embedding, n_neighbors=90, method="exact", inplace=False)
 
     n_cluster = np.unique(adata.obs["cell_annotation"]).size
     prev_n = -100
     prev_clusters = None
     for i in np.arange(0.1, 3, 0.1):
-        clusters = snap.tl.leiden(knn, resolution=i, inplace=False)
+        clusters = snap.tl.leiden(knn_50, resolution=i, inplace=False)
         n = np.unique(clusters).size
         if n == n_cluster:
             break
@@ -59,18 +60,18 @@ process eval_embedding {
     metrics["ARI"] = float(adjusted_rand_score(clusters, cell_anno))
     metrics["AMI"] = float(adjusted_mutual_info_score(clusters, cell_anno))
     metrics["Cell_type_ASW"] = scib_metrics.silhouette_label(embedding, cell_anno)
-    if knn.data.min() == 0:
-        knn.data = knn.data + 1e-6
-    metrics['cLISI'] = float(np.median(scib_metrics.clisi_knn(knn, cell_anno)))
+    if knn_90.data.min() == 0:
+        knn_90.data = knn_90.data + 1e-6
+    metrics['cLISI'] = float(np.median(scib_metrics.clisi_knn(knn_90, cell_anno)))
 
     if 'batch_key' in metadata:
         batch_key = metadata['batch_key']
         batch = adata.obs[batch_key]
         metrics['isolated_label_silhouette'] = float(scib_metrics.isolated_labels(
             embedding, cell_anno, batch))
-        metrics["kBET"] = float(scib_metrics.kbet(knn, batch)[0])
-        metrics['iLISI'] = float(np.median(scib_metrics.ilisi_knn(knn, batch)))
-        metrics['Graph_conn'] = float(scib_metrics.graph_connectivity(knn, cell_anno))
+        metrics["kBET"] = float(scib_metrics.kbet(knn_50, batch)[0])
+        metrics['iLISI'] = float(np.median(scib_metrics.ilisi_knn(knn_90, batch)))
+        metrics['Graph_conn'] = float(scib_metrics.graph_connectivity(knn_50, cell_anno))
         metrics['Batch_ASW'] = float(scib_metrics.silhouette_batch(
             embedding, cell_anno, batch
         ))

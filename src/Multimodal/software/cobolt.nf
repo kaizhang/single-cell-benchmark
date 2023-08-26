@@ -38,7 +38,7 @@ process dim_reduct {
     multi_dt = MultiomicDataset.from_singledata(cobolt_rna, cobolt_atac)
 
     model = Cobolt(dataset=multi_dt, lr=0.002, n_latent=30)
-    model.train(num_epochs=1)
+    model.train()
     model.calc_all_latent()
     latent, barcodes = model.get_all_latent()
     barcodes = pd.DataFrame(index=[x.split("Multiome~")[1] for x in barcodes])
