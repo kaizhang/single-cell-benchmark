@@ -22,6 +22,7 @@ process dim_reduct {
     from cobolt.model import Cobolt
     import anndata as ad
     import numpy as np
+    import pandas as pd
 
     atac_data = ad.read('1.h5ad')
     rna_data = ad.read('2.h5ad')
@@ -37,10 +38,10 @@ process dim_reduct {
     multi_dt = MultiomicDataset.from_singledata(cobolt_rna, cobolt_atac)
 
     model = Cobolt(dataset=multi_dt, lr=0.002, n_latent=30)
-    model.train()
+    model.train(num_epochs=1)
     model.calc_all_latent()
     latent, barcodes = model.get_all_latent()
-    barcodes = [x.split("Multiome~")[1] for x in barcodes]
+    barcodes = pd.DataFrame(index=[x.split("Multiome~")[1] for x in barcodes])
     latent = ad.AnnData(X=latent, obs=barcodes)[rna_data.obs_names].copy().X
 
     np.savetxt("reduced_dim.tsv", latent, delimiter="\t")
