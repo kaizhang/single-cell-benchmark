@@ -19,12 +19,6 @@
   data_url: https://osf.io/download/mbs6t/
   assay: RNA
 
-- data_hash: sha256:aefb5b88798757057dd55ff89f2c580cb67b16ef4b12c091aea6373da717d6d6
-  data_name: BoneMarrow_Chen_2019_clean
-  data_url: https://osf.io/download/a5nh7/
-  genome: hg19
-  group: "Sequence Depth"
-  assay: ATAC
 - data_hash: sha256:8125ecf60a6c2e3f69f8c0d3434aacd8f8cd4e5c33d9e49a3156895c06c5712f
   data_name: BoneMarrow_Chen_2019_cov250
   data_url: https://osf.io/download/6yms7/
@@ -60,17 +54,62 @@
   coverge: 5000
   group: "Sequence Depth"
   assay: ATAC
+
+- data_hash: sha256:aefb5b88798757057dd55ff89f2c580cb67b16ef4b12c091aea6373da717d6d6
+  data_name: BoneMarrow_Chen_2019_clean
+  data_url: https://osf.io/download/a5nh7/
+  genome: hg19
+  group: "Noise"
+  assay: ATAC
 - data_hash: sha256:99769f835a4eb1daa1140b246079b5b53e7b507dc7f8f9796b2b820e6b21b852
   data_name: BoneMarrow_Chen_2019_noise_p2
   data_url: https://osf.io/download/xtwh9/
   genome: hg19
   noise_level: 0.02
+  group: "Noise"
   assay: ATAC
 - data_hash: sha256:5aac8d5b6c730d18ced677bc8773e10c9cbb36b5eab888bb93b980d122d7ae73
   data_name: BoneMarrow_Chen_2019_noise_p4
   data_url: https://osf.io/download/5g9jk/
   genome: hg19
   noise_level: 0.04
+  group: "Noise"
+  assay: ATAC
+
+- data_hash: sha256:12d44feb9820097864dd931e15b3c2706d383265035c8e0dfab227cb60301ccb
+  data_name: BoneMarrow_Chen_2019_CD8_0.005
+  data_url: https://osf.io/download/ma2ec/
+  genome: hg19
+  rare_label: "CD8"
+  group: "Rare Cell Type"
+  assay: ATAC
+- data_hash: sha256:a63e86889cc321e66d9b5b1c2ffd40525eafaac2f985b01e98c1547a6c0ea000
+  data_name: BoneMarrow_Chen_2019_CD8_0.01
+  data_url: https://osf.io/download/7c93q/
+  genome: hg19
+  rare_label: "CD8"
+  group: "Rare Cell Type"
+  assay: ATAC
+- data_hash: sha256:b8c61c053c157c594cd4ea1dbe3b6bb599f06bb468a9bd35adc5ac3444f7c726
+  data_name: BoneMarrow_Chen_2019_CD8_0.05
+  data_url: https://osf.io/download/wh278/
+  genome: hg19
+  rare_label: "CD8"
+  group: "Rare Cell Type"
+  assay: ATAC
+- data_hash: sha256:c7ea2d50bb1134b7e39b88fd00468a8cca3df8addf5c9efb98c3538c52bfa1e6
+  data_name: BoneMarrow_Chen_2019_CD8_0.1
+  data_url: https://osf.io/download/q7w4y/
+  genome: hg19
+  rare_label: "CD8"
+  group: "Rare Cell Type"
+  assay: ATAC
+- data_hash: sha256:e09670ef9101846d1d40f1b4cfb94e941fbd5116ad5537d218a234167209c320
+  data_name: BoneMarrow_Chen_2019_CD8_0.15
+  data_url: https://osf.io/download/zxkv4/
+  genome: hg19
+  rare_label: "CD8"
+  group: "Rare Cell Type"
   assay: ATAC
 
 - data_hash: sha256:b6a559e7be058bdf174f00f1a6f10749ebf025f0995bbcca2288b9ed0fd51b0e

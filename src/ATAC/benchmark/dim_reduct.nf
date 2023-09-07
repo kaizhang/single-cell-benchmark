@@ -22,7 +22,8 @@ include { dim_reduct_pycistopic as cisTopic } from '../software/pycistopic.nf'
 include { dim_reduct_scbasset as scBasset } from '../software/scbasset.nf'
 include { dim_reduct_episcanpy as epiScanpy } from '../software/episcanpy.nf'
 
-include { eval_embedding; output_metrics; plot_metrics; umap; plot_umap
+include { eval_embedding; output_metrics; plot_metrics; umap; plot_umap;
+          rare_label_asw; output_rare_label_asw
         } from '../../common/metrics.nf' params(resultDir: "${params.outdir}/ATAC/dim_reduct")
 include { json; genBenchId } from '../../common/utils.gvy'
 include { download_genome } from '../../common/download.nf'
@@ -74,6 +75,12 @@ workflow bench {
             | map { "'" + it + "'" } | toSortedList
             | output_metrics
             | plot_metrics
+        
+        embedding
+            | filter { json(it[0]).containsKey("rare_label") }
+            | rare_label_asw
+            | map { "'" + it + "'" } | toSortedList
+            | output_rare_label_asw
 
         embedding
             | umap

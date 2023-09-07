@@ -19,12 +19,28 @@ process dim_reduct_episcanpy {
     #!/usr/bin/env python
     import anndata as ad
     import episcanpy as epi
+    import scanpy as sc
     import numpy as np
+    def find_elbow(x):
+        n = len(x)
+        marks = []
+        saturation = 0.01
+        accum_gap = 0
+        for i in range(1, n):
+            gap = x[i-1] - x[i]
+            accum_gap += gap
+            if gap > saturation * accum_gap:
+                marks.append(i)
+        return min(n - 1, max(marks) + 1)
     data = ad.read("data.h5ad")
     data.X.data = data.X.data.astype(np.float64)
     epi.pp.normalize_per_cell(data)
     epi.pp.log1p(data)
     epi.pp.pca(data, n_comps=30)
-    np.savetxt("reduced_dim.tsv", data.obsm['X_pca'], delimiter="\t")
+    sc.pl.pca_variance_ratio(data, log=True, save=".png")
+    n_pc = find_elbow(data.uns['pca']['variance'])
+    print(f"Elbow point: {n_pc}")
+    embedding = data.obsm['X_pca'][:, :n_pc]
+    np.savetxt("reduced_dim.tsv", embedding, delimiter="\t")
     """
 }

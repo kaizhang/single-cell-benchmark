@@ -16,6 +16,7 @@ process highly_variable_genes {
     import scanpy as sc
     adata = sc.read("data.h5ad")
     adata.var_names_make_unique()
+    adata.layers["counts"] = adata.X.copy()
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=${n_top_genes})

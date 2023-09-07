@@ -5,12 +5,11 @@ params.outdir = "results"
 include { highly_variable_genes; scale_features } from './preprocess'
 include { download_dataset } from '../common/download'
 include { dim_reduct as scanpy } from './software/scanpy.nf'
-include { dim_reduct as snapatac2
-          dim_reduct_svd as snapatac2_svd
-        } from './software/snapatac2.nf'
+include { dim_reduct as snapatac2 } from './software/snapatac2.nf'
+include { dim_reduct as scvi } from './software/scvi.nf'
 
-include { bench_embedding
-        } from '../common/benchmark.nf' params(resultDir: "${params.outdir}/RNA")
+include { eval_embedding; output_metrics; plot_metrics; umap; plot_umap
+        } from '../common/metrics.nf' params(resultDir: "${params.outdir}/RNA")
 
 include { json; genBenchId } from '../common/utils.gvy'
 
@@ -24,16 +23,25 @@ workflow bench_rna {
         data_scaled = scale_features(data_hvg)
 
         embedding = snapatac2(data_hvg) | concat(
-            snapatac2_svd(data_hvg),
+            scvi(data_hvg),
             scanpy(data_hvg | concat(data_scaled)),
         )
-
-        embedding
             | map({ [json(it[0]).data_name, it] })
             | combine(
                 data_full | map({ [json(it[0]).data_name, it[1]] }),
                 by: 0
             )
             | map ({ [genBenchId(it[1][0]), it[1][1], it[2]] })
-            | bench_embedding
+
+        embedding
+            | eval_embedding
+            | map { "'" + it + "'" } | toSortedList
+            | output_metrics
+            | plot_metrics
+
+        embedding
+            | umap
+            | map { [json(it[0]).data_name, json(it[0]).batch_key, it[1]] }
+            | groupTuple(by: [0,1], sort: true)
+            | plot_umap
 }
